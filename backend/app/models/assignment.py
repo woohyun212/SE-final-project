@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -13,6 +13,6 @@ class Assignment(Base):
     due_date = Column(DateTime, nullable=True)
     grade = Column(Float, nullable=True)
     is_completed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     course = relationship("Course", back_populates="assignments")

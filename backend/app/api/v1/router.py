@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from app.api.v1.endpoints import auth, courses, assignments, study_notes
 from app.api.deps import get_current_user
@@ -27,7 +27,7 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         Assignment.is_completed == True
     ).count() if user_course_ids else 0
     
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     upcoming_assignments = db.query(Assignment).filter(
         Assignment.course_id.in_(user_course_ids),
         Assignment.is_completed == False,

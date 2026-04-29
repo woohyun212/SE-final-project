@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.study_note import StudyNote
@@ -30,7 +30,7 @@ class StudyNoteService:
             return None
         for key, value in data.model_dump(exclude_unset=True).items():
             setattr(note, key, value)
-        note.updated_at = datetime.utcnow()
+        note.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(note)
         return note

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -15,7 +15,7 @@ class Course(Base):
     semester = Column(String, nullable=True)
     year = Column(Integer, nullable=True)
     color = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = relationship("User", back_populates="courses")
     assignments = relationship("Assignment", back_populates="course", cascade="all, delete-orphan")
