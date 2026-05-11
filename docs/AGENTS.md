@@ -13,6 +13,11 @@
 |-----------|---------|
 | `회의록/` | 회의록 + SRS + 다이어그램 + ADR (설계 단계 SSOT). 자세한 내부 규칙은 `회의록/AGENTS.md` 와 `회의록/README.md`. |
 
+## Key Files
+| File | Description |
+|------|-------------|
+| `tech-stack-decision.md` | 기술 스택 카탈로그(파생 문서). **이 파일을 수정하지 말고** 먼저 `회의록/decisions/` 의 해당 ADR을 수정한 뒤 동기화한다. 결정 사유의 SSOT는 ADR이다. |
+
 ## For AI Agents
 
 ### Working In This Directory
