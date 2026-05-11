@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif">
+  <!-- Title -->
+  <text x="500" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">
+    유스케이스 다이어그램 — AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- ============ 시스템 박스 ============ -->
+  <rect x="320" y="65" width="360" height="620" rx="8" ry="8"
+        fill="#FAFAFA" stroke="#1976D2" stroke-width="2"/>
+  <text x="500" y="90" text-anchor="middle" font-size="14" font-weight="700" fill="#0D47A1">
+    AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- ============ 유스케이스 8개 (타원) ============ -->
+  <!-- UC-01 회원가입 -->
+  <ellipse cx="500" cy="130" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="128" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-01</text>
+  <text x="500" y="143" text-anchor="middle" font-size="12" fill="#212121">회원가입</text>
+
+  <!-- UC-02 로그인 -->
+  <ellipse cx="500" cy="185" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="183" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-02</text>
+  <text x="500" y="198" text-anchor="middle" font-size="12" fill="#212121">로그인 / 로그아웃</text>
+
+  <!-- UC-07 프로필 수정 -->
+  <ellipse cx="500" cy="240" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="238" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-07</text>
+  <text x="500" y="253" text-anchor="middle" font-size="12" fill="#212121">프로필 수정</text>
+
+  <!-- UC-03 음성으로 추천 받기 (핵심) -->
+  <ellipse cx="500" cy="330" rx="115" ry="30" fill="#FFE0B2" stroke="#E65100" stroke-width="2.5"/>
+  <text x="500" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#BF360C">⭐ UC-03</text>
+  <text x="500" y="343" text-anchor="middle" font-size="12" font-weight="600" fill="#212121">음성으로 음악 추천 받기</text>
+
+  <!-- UC-04 추천 곡 재생 -->
+  <ellipse cx="500" cy="420" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="418" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-04</text>
+  <text x="500" y="433" text-anchor="middle" font-size="12" fill="#212121">추천 곡 재생</text>
+
+  <!-- UC-05 피드백 -->
+  <ellipse cx="500" cy="485" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="483" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-05</text>
+  <text x="500" y="498" text-anchor="middle" font-size="12" fill="#212121">피드백 남기기</text>
+
+  <!-- UC-06 추천 이력 조회 -->
+  <ellipse cx="500" cy="545" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="543" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-06</text>
+  <text x="500" y="558" text-anchor="middle" font-size="12" fill="#212121">추천 이력 조회</text>
+
+  <!-- UC-08 카탈로그 새로고침 (관리자) -->
+  <ellipse cx="500" cy="635" rx="105" ry="22" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="500" y="633" text-anchor="middle" font-size="11" font-weight="600" fill="#4A148C">UC-08</text>
+  <text x="500" y="648" text-anchor="middle" font-size="12" fill="#212121">음악 카탈로그 새로고침</text>
+
+  <!-- ============ 액터: 사용자 (왼쪽) ============ -->
+  <g transform="translate(150, 330)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="14" x2="0" y2="50" stroke="#212121" stroke-width="2"/>
+    <line x1="-18" y1="25" x2="18" y2="25" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="-15" y2="75" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="15" y2="75" stroke="#212121" stroke-width="2"/>
+    <text x="0" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#212121">사용자</text>
+  </g>
+
+  <!-- ============ 액터: 관리자 (왼쪽 하단) ============ -->
+  <g transform="translate(150, 620)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="14" x2="0" y2="50" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="-18" y1="25" x2="18" y2="25" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="50" x2="-15" y2="75" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="50" x2="15" y2="75" stroke="#6A1B9A" stroke-width="2"/>
+    <text x="0" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#4A148C">관리자</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: Spotify ============ -->
+  <g transform="translate(820, 270)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#F1F8E9" stroke="#33691E" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#558B2F">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#33691E">Spotify API</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: LLM ============ -->
+  <g transform="translate(820, 380)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#FFF3E0" stroke="#E65100" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#EF6C00">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#E65100">LLM API</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: YouTube ============ -->
+  <g transform="translate(820, 610)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#FFEBEE" stroke="#B71C1C" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#C62828">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#B71C1C">YouTube API</text>
+  </g>
+
+  <!-- ============ 관계: 사용자 ─ UC들 (실선) ============ -->
+  <line x1="168" y1="320" x2="405" y2="130" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="320" x2="405" y2="185" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="325" x2="405" y2="240" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="330" x2="385" y2="330" stroke="#424242" stroke-width="1.8"/> <!-- UC-03 핵심: 굵게 -->
+  <line x1="168" y1="340" x2="405" y2="420" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="345" x2="405" y2="485" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="350" x2="405" y2="545" stroke="#424242" stroke-width="1.3"/>
+
+  <!-- ============ 관계: 관리자 ─ UC-08 ============ -->
+  <line x1="168" y1="635" x2="395" y2="635" stroke="#6A1B9A" stroke-width="1.5"/>
+
+  <!-- ============ 관계: UC-03 ─ Spotify, LLM (외부 시스템 호출) ============ -->
+  <line x1="615" y1="320" x2="820" y2="285" stroke="#33691E" stroke-width="1.3"/>
+  <line x1="615" y1="340" x2="820" y2="400" stroke="#E65100" stroke-width="1.3"/>
+
+  <!-- ============ 관계: UC-04 ─ Spotify (재생 메타) ============ -->
+  <line x1="595" y1="415" x2="820" y2="295" stroke="#33691E" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.7"/>
+
+  <!-- ============ 관계: UC-08 ─ YouTube, Spotify ============ -->
+  <line x1="605" y1="630" x2="820" y2="625" stroke="#B71C1C" stroke-width="1.3"/>
+  <line x1="605" y1="625" x2="820" y2="310" stroke="#33691E" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.7"/>
+
+  <!-- ============ Include 관계 (UC-03 includes UC-02) ============ -->
+  <line x1="500" y1="300" x2="500" y2="207" stroke="#1565C0" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#openArrow)"/>
+  <rect x="510" y="245" width="78" height="16" fill="#FAFAFA"/>
+  <text x="549" y="257" text-anchor="middle" font-size="10" font-style="italic" fill="#1565C0">«include»</text>
+
+  <!-- ============ Extend 관계 (UC-05 extends UC-04) ============ -->
+  <line x1="500" y1="463" x2="500" y2="442" stroke="#7B1FA2" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#openArrow)"/>
+  <rect x="510" y="448" width="76" height="14" fill="#FAFAFA"/>
+  <text x="548" y="459" text-anchor="middle" font-size="10" font-style="italic" fill="#7B1FA2">«extend»</text>
+
+  <!-- Arrow marker (open) -->
+  <defs>
+    <marker id="openArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 범례 ============ -->
+  <g transform="translate(40, 30)">
+    <rect x="0" y="0" width="200" height="100" rx="4" fill="#FFFFFF" stroke="#BDBDBD" stroke-width="1"/>
+    <text x="10" y="18" font-size="11" font-weight="700" fill="#212121">범례</text>
+
+    <line x1="10" y1="32" x2="35" y2="32" stroke="#424242" stroke-width="1.3"/>
+    <text x="42" y="36" font-size="10" fill="#424242">Association</text>
+
+    <line x1="10" y1="50" x2="35" y2="50" stroke="#1565C0" stroke-width="1.2" stroke-dasharray="5,3"/>
+    <text x="42" y="54" font-size="10" fill="#424242">«include» / «extend»</text>
+
+    <ellipse cx="22" cy="68" rx="12" ry="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5"/>
+    <text x="42" y="72" font-size="10" fill="#424242">핵심 유스케이스</text>
+
+    <ellipse cx="22" cy="86" rx="12" ry="6" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+    <text x="42" y="90" font-size="10" fill="#424242">관리자 유스케이스</text>
+  </g>
+</svg>
