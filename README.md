@@ -85,8 +85,8 @@ SE-final-project/
 
 ```
 ┌────────────┐    ┌──────────────┐    ┌──────────────┐    ┌────────────┐
-│  새 브랜치  │ →  │ commit       │ →  │ push + PR    │ →  │ 머지 +     │
-│  분기      │    │ (atomic)     │    │ create       │    │ 브랜치 삭제 │
+│  새 브랜치   │ →  │ commit       │ →  │ push + PR    │ →  │ 머지 +      │
+│  분기       │    │ (atomic)     │    │ create       │    │ 브랜치 삭제   │
 └────────────┘    └──────────────┘    └──────────────┘    └────────────┘
    feature/X        Conventional         gh pr create        gh pr merge
                     Commits              --base main         --merge
