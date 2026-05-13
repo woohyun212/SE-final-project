@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>요구사항 문서 v1.0 — AI 기반 감정 분석 음악 추천 시스템</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap');
+@page { size: A4; margin: 2cm; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  line-height: 1.6;
+  color: #212121;
+  max-width: 800px;
+  margin: 2em auto;
+  padding: 0 2em;
+  font-size: 14px;
+}
+h1, h2, h3, h4 { color: #0D47A1; }
+h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.3em; font-size: 1.6em; }
+h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.2em; margin-top: 2em; font-size: 1.3em; }
+h3 { font-size: 1.1em; margin-top: 1.5em; }
+h4 { font-size: 1em; margin-top: 1.2em; color: #1565C0; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { border: 1px solid #E0E0E0; padding: 0.5em 0.7em; text-align: left; }
+th { background: #E3F2FD; font-weight: 600; }
+td { vertical-align: top; }
+tr:nth-child(even) td { background: #FAFAFA; }
+code, .id { background: #F5F5F5; padding: 0.1em 0.4em; border-radius: 3px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.9em; }
+figure { margin: 1.5em 0; text-align: center; }
+figcaption { font-size: 0.9em; color: #616161; margin-top: 0.5em; }
+blockquote {
+  border-left: 4px solid #1976D2;
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  background: #F8F9FA;
+  font-style: italic;
+}
+.badge { display: inline-block; padding: 0.1em 0.5em; border-radius: 3px; font-size: 0.85em; font-weight: 600; }
+.must { background: #FFCDD2; color: #B71C1C; }
+.should { background: #FFF9C4; color: #F57F17; }
+.could { background: #C8E6C9; color: #1B5E20; }
+.cover {
+  text-align: center;
+  padding: 4em 2em;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.cover h1 {
+  font-size: 2em;
+  border-bottom: 3px solid #1976D2;
+  padding-bottom: 0.3em;
+  width: 100%;
+}
+.cover .subtitle { font-size: 1.1em; color: #424242; margin: 0.5em 0 2em; }
+.meta-box {
+  border: 1px solid #BBDEFB;
+  background: #F8F9FA;
+  border-radius: 6px;
+  padding: 1.2em 2em;
+  margin-top: 1.5em;
+  width: 100%;
+  max-width: 500px;
+}
+.meta-box table { margin: 0; }
+.meta-box th { width: 35%; background: #E3F2FD; }
+.toc { margin: 1.5em 0; }
+.toc ol { padding-left: 1.5em; }
+.toc li { margin: 0.3em 0; }
+.toc a { color: #1565C0; text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.persona-card {
+  border: 1px solid #BBDEFB;
+  border-radius: 6px;
+  padding: 1em 1.2em;
+  margin: 1em 0;
+  background: #FAFAFA;
+}
+.persona-card h4 { margin-top: 0; color: #0D47A1; }
+.highlight-box {
+  background: #E3F2FD;
+  border-left: 4px solid #1976D2;
+  padding: 0.7em 1em;
+  margin: 1em 0;
+  border-radius: 0 4px 4px 0;
+}
+.appendix-log {
+  background: #F9F9F9;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  padding: 1em 1.2em;
+  margin: 1.5em 0;
+  font-size: 0.92em;
+}
+.appendix-log h4 { margin-top: 0; color: #0D47A1; }
+.dialogue { margin: 0.5em 0; }
+.dialogue .speaker { font-weight: 700; color: #1565C0; }
+.dialogue .speaker.persona { color: #424242; }
+@media print {
+  body { max-width: none; }
+  h2 { page-break-before: auto; }
+  .page-break { page-break-after: always; }
+  table, figure { page-break-inside: avoid; }
+  .cover { page-break-after: always; min-height: auto; padding: 3em 0; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 표지 ===== -->
+<section class="cover">
+  <h1>AI 기반 감정 분석 음악 추천 시스템</h1>
+  <p class="subtitle">요구사항 문서 (Requirements Document) — 중간 보고용 v1.0</p>
+  <div class="meta-box">
+    <table>
+      <tr><th>작성일</th><td>2026-05-13</td></tr>
+      <tr><th>버전</th><td>v1.0 (중간 보고용)</td></tr>
+      <tr><th>작성자</th><td>CWNU CE 박우현, 신성민, 정원준</td></tr>
+      <tr><th>강의명</th><td>소프트웨어공학 (Software Engineering)</td></tr>
+      <tr><th>단계</th><td>Sprint #0 — W12 1단계 중간 제출</td></tr>
+    </table>
+  </div>
+</section>
+
+<div class="page-break"></div>
+
+<!-- ===== 개정 이력 ===== -->
+<h2 id="revision">개정 이력</h2>
+<table>
+  <thead><tr><th>버전</th><th>일자</th><th>작성자</th><th>변경 사항</th></tr></thead>
+  <tbody>
+    <tr><td>v1.0</td><td>2026-05-13</td><td>박우현, 신성민, 정원준</td><td>Sprint #0 산출물 통합 — SRS v1, 페르소나 3명, AI 인터뷰 로그, 유스케이스 다이어그램, FR/NFR 전체, 인터뷰 매핑 표 수록. 중간 보고용 초안 작성.</td></tr>
+  </tbody>
+</table>
+
+<!-- ===== 목차 ===== -->
+<h2 id="toc">목차</h2>
+<div class="toc">
+<ol>
+  <li><a href="#sec1">시스템 개요</a></li>
+  <li><a href="#sec2">이해관계자 및 액터</a></li>
+  <li><a href="#sec3">사용자 조사 — 페르소나</a>
+    <ol>
+      <li><a href="#sec3-1">김지원 (27세, IT 직장인)</a></li>
+      <li><a href="#sec3-2">박서준 (22세, 음악 전공 학생)</a></li>
+      <li><a href="#sec3-3">이수민 (34세, 음악 큐레이터)</a></li>
+    </ol>
+  </li>
+  <li><a href="#sec4">사용자 조사 — AI 인터뷰 결과</a></li>
+  <li><a href="#sec5">유스케이스 다이어그램</a></li>
+  <li><a href="#sec6">유스케이스 명세</a></li>
+  <li><a href="#sec7">기능 요구사항 (FR)</a></li>
+  <li><a href="#sec8">비기능 요구사항 (NFR)</a></li>
+  <li><a href="#sec9">인터뷰 → FR/NFR 매핑</a></li>
+  <li><a href="#sec10">가정 및 제약사항</a></li>
+</ol>
+<p><strong>부록</strong></p>
+<ul>
+  <li><a href="#appA">부록 A. AI 시뮬레이션 로그</a></li>
+  <li><a href="#appB">부록 B. 명확화 기록 (C-0001)</a></li>
+</ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 1. 시스템 개요 ===== -->
+<h1 id="sec1">1. 시스템 개요</h1>
+
+<p>
+사용자의 <strong>음성 입력</strong>을 기반으로 <strong>(a) 음성에서 추출한 감정</strong>과 <strong>(b) STT→LLM으로 분석한 맥락</strong>을 융합하여, 사용자의 현재 상태에 부합하는 음악을 추천하는 데스크탑 애플리케이션이다. 추천 결과는 감정-음악 2D 매핑 차트와 LLM 기반 추천 이유 설명으로 함께 제공된다.
+</p>
+
+<table>
+  <thead><tr><th>항목</th><th>결정</th></tr></thead>
+  <tbody>
+    <tr><td>클라이언트</td><td>Electron 크로스플랫폼 (Windows / macOS / Linux)</td></tr>
+    <tr><td>입력 양식</td><td>음성 (마이크 녹음)</td></tr>
+    <tr><td>분석 경로</td><td>ML 감정분류 + STT→LLM 맥락분석 → 융합 (듀얼 트랙)</td></tr>
+    <tr><td>음악 소스</td><td>Spotify Web API (메인) + 캐글 dataset (학습용) + YouTube 감성 플리 (큐레이션 시드)</td></tr>
+    <tr><td>시각화</td><td>감정-음악 2D 매핑 차트 (valence × energy) + LLM 추천 이유 설명</td></tr>
+    <tr><td>평가 지표</td><td>좋아요율 · 재생완료율 · Precision@K</td></tr>
+    <tr><td>배포</td><td>Blue-Green 무중단 배포 (백엔드/ML 서버)</td></tr>
+  </tbody>
+</table>
+
+<h3>주요 아키텍처 결정 근거</h3>
+<table>
+  <thead><tr><th>결정 항목</th><th>선택</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>클라이언트 플랫폼</td><td>Electron</td><td>크로스플랫폼(Win/macOS/Linux) 단일 코드베이스, 마이크 접근 API (MediaRecorder) 내장</td></tr>
+    <tr><td>입력 방식</td><td>음성</td><td>페르소나 인터뷰에서 "손이 바빠도 말 한마디로" 요구 확인. 텍스트 입력 대비 감정 신호 풍부</td></tr>
+    <tr><td>분석 전략</td><td>듀얼 트랙 융합</td><td>음성 감정(비언어 신호) + STT 맥락(의미론적 신호) 병렬 처리 → 단일 트랙 대비 추천 정밀도 향상</td></tr>
+  </tbody>
+</table>
+
+<!-- ===== 2. 이해관계자 및 액터 ===== -->
+<h1 id="sec2">2. 이해관계자 및 액터</h1>
+
+<h3>2.1 이해관계자 (Stakeholders)</h3>
+<table>
+  <thead><tr><th>이해관계자</th><th>관심사</th></tr></thead>
+  <tbody>
+    <tr><td>최종 사용자</td><td>자신의 감정과 맥락에 맞는 음악 추천</td></tr>
+    <tr><td>시스템 관리자</td><td>음악 카탈로그 품질 및 운영 안정성</td></tr>
+    <tr><td>개발팀</td><td>유지보수 가능한 코드, 무중단 배포</td></tr>
+    <tr><td>외부 서비스 제공자 (Spotify / LLM / YouTube)</td><td>API 사용량 정책 준수</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 액터 (Actors)</h3>
+<table>
+  <thead><tr><th>액터</th><th>유형</th><th>역할</th></tr></thead>
+  <tbody>
+    <tr><td>사용자</td><td>Primary</td><td>음성 입력 → 추천 수신 → 피드백</td></tr>
+    <tr><td>관리자</td><td>Primary</td><td>음악 카탈로그 동기화 및 관리</td></tr>
+    <tr><td>Spotify Web API</td><td>Secondary (External System)</td><td>audio features, 트랙 메타 제공</td></tr>
+    <tr><td>LLM API</td><td>Secondary (External System)</td><td>텍스트 맥락 분석, 추천 이유 생성</td></tr>
+    <tr><td>YouTube Data API</td><td>Secondary (External System)</td><td>감성 플리에서 시드 트랙 추출</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 3. 페르소나 ===== -->
+<h1 id="sec3">3. 사용자 조사 — 페르소나</h1>
+
+<p>세 페르소나는 시스템의 주요 사용 시나리오를 대표하도록 설계되었다. 각 페르소나는 AI 인터뷰 시뮬레이션(부록 A)의 설정 기반으로 도출되었으며, SRS v1의 FR/NFR과 직접 연결된다.</p>
+
+<!-- 페르소나 1 -->
+<div class="persona-card" id="sec3-1">
+<h4>페르소나 1 — 김지원 (27세, IT 직장인)</h4>
+<table>
+  <thead><tr><th>항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td>이름</td><td>김지원</td></tr>
+    <tr><td>나이</td><td>27세</td></tr>
+    <tr><td>직업</td><td>IT 스타트업 백엔드 개발자</td></tr>
+    <tr><td>음악 청취 맥락</td><td>야근 후 퇴근길 지하철, 점심 산책 중. 그날 감정 상태에 따라 장르가 확연히 달라짐</td></tr>
+    <tr><td>페인 포인트</td><td>스포티파이 추천이 "최근 들은 곡 기반"이라 현재 감정과 안 맞을 때가 많음. 기분 전환이 필요한 순간에 오히려 익숙한 곡만 반복됨</td></tr>
+    <tr><td>목표</td><td>지금 이 순간 내 기분에 딱 맞는 음악을, 길게 검색하지 않고 말 한마디로 찾고 싶음</td></tr>
+    <tr><td>관련 FR</td><td>FR2 (음성 입력), FR3 (감정·맥락 분석), FR4 (음악 추천), FR5.4 (재생)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>사용 시나리오:</strong> 지원은 오후 11시 퇴근 후 지하철 승강장에서 앱을 켠다. "녹음 시작"을 탭하고 "오늘 너무 힘들었어. 상사한테 두 번이나 혼났고 집에 가기도 싫어."라고 말한다. 앱이 분노+피로 감정 벡터를 추출하고 "직장 스트레스·부정적 감정" 맥락을 분석해, "낮은 valence, 높은 energy" 쿼리로 10곡을 반환한다. 드라이브 느낌의 록과 감성적인 인디 팝을 확인한 지원은 추천 이유 "오늘의 긴장감을 풀어줄 거친 에너지의 곡들"을 보고 첫 번째 곡을 재생한 뒤 좋아요를 눌러 다음 추천에 반영한다.</p>
+
+<blockquote>"오늘 회의에서 발표 망했어 — 이런 거 말하면 알아서 맞는 거 찾아주면 완전 좋겠다. 근데 음성 녹음 후 원본 삭제된다는 게 명확했으면 좋겠어요."</blockquote>
+</div>
+
+<!-- 페르소나 2 -->
+<div class="persona-card" id="sec3-2">
+<h4>페르소나 2 — 박서준 (22세, 음악 전공 학생)</h4>
+<table>
+  <thead><tr><th>항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td>이름</td><td>박서준</td></tr>
+    <tr><td>나이</td><td>22세</td></tr>
+    <tr><td>직업</td><td>실용음악과 3학년 (작곡 전공)</td></tr>
+    <tr><td>음악 청취 맥락</td><td>작곡 전 영감 수집, 강의 후 감성 정리, 연습실 이동 중. 음악을 "듣는 것"보다 "분석하고 흡수하는 것"으로 접근</td></tr>
+    <tr><td>페인 포인트</td><td>추천 결과가 왜 이 곡인지 근거를 알 수 없음. 내 감정과 음악 특성 사이의 관계가 시각적으로 보이지 않아 작곡 레퍼런스로 활용하기 어려움</td></tr>
+    <tr><td>목표</td><td>지금 내 감성 상태가 음악의 어떤 좌표에 해당하는지 데이터로 확인하고, 누적 피드백으로 나만의 감성 지도를 만들고 싶음</td></tr>
+    <tr><td>관련 FR</td><td>FR1 (계정 관리), FR5 (2D 차트 시각화), FR6 (피드백·개인화)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>사용 시나리오:</strong> 서준은 신곡 스케치를 시작하기 전 앱을 열고 "지금 좀 멍하고 몽환적인 느낌이야. 깊고 공간감 있는 음악이 필요해."라고 말한다. 시스템이 감정 벡터(낮은 energy, 중간 valence)와 LLM 맥락 분석("몽환, 공간감") 결과를 융합해 10곡을 추천하고, valence×energy 2D 차트에 각 곡이 점으로 표시된다. 서준은 "내 감성이 오늘 이쪽 구역에 있구나"를 확인하고 레퍼런스 곡에 좋아요를 누른다. 2주 후 추천 이력 조회를 통해 자신의 감성 패턴이 "low energy, mid valence 영역에 집중"됨을 발견한다.</p>
+
+<blockquote>"valence-energy 같은 개념 배웠는데, 그게 시각적으로 보이면 진짜 좋겠다 싶어요."</blockquote>
+<blockquote>"STT 텍스트가 남는 건 좀 신경 쓰여요. 동의 받고 저장하는 방식이면 괜찮을 것 같아요."</blockquote>
+</div>
+
+<!-- 페르소나 3 -->
+<div class="persona-card" id="sec3-3">
+<h4>페르소나 3 — 이수민 (34세, 음악 큐레이터 / 관리자)</h4>
+<table>
+  <thead><tr><th>항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td>이름</td><td>이수민</td></tr>
+    <tr><td>나이</td><td>34세</td></tr>
+    <tr><td>직업</td><td>독립 음악 큐레이터 (YouTube 감성 플레이리스트 채널 운영, 구독자 8만)</td></tr>
+    <tr><td>음악 청취 맥락</td><td>신규 플리 편성 작업 중, 청중 반응 모니터링. 음악을 콘텐츠로 다루며 감성별 카탈로그 품질 유지가 주 업무</td></tr>
+    <tr><td>페인 포인트</td><td>YouTube 플리에서 좋은 곡을 발견해도 Spotify 매칭·카탈로그 적재를 수동으로 해야 해서 시간이 많이 걸림. 피드백 데이터 없이 직감에만 의존</td></tr>
+    <tr><td>목표</td><td>YouTube 플리 → 카탈로그 자동 동기화 파이프라인 확보. 사용자 피드백 통계로 큐레이션 품질을 데이터 기반으로 개선</td></tr>
+    <tr><td>관련 FR</td><td>FR7 (카탈로그 관리), FR6.5 (추천 이력), FR4.4 (캐싱), NFR2.2 (무중단 배포)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>사용 시나리오:</strong> 수민은 새로 발견한 "새벽 감성 2026" YouTube 플리(50곡)를 어드민 패널에서 등록한다. <code>CatalogSynchronizer</code>가 트랙 메타를 추출하고 Spotify 매칭을 시도해 45곡 성공, 5곡 미매칭 알림을 보낸다. 수민이 미매칭 5곡을 수동 확인하고 대체 트랙을 지정하면, 라이선스·지역 필터를 통과한 곡들이 카탈로그에 적재된다. 2주 후 피드백 통계로 좋아요율 낮은 3곡을 제거하고 다음 주기 동기화를 스케줄링한다. 배포 중에도 사용자 서비스는 끊기지 않는다.</p>
+
+<blockquote>"업데이트 공지 없이 갑자기 다운되면 민망하죠. 무중단으로 배포할 수 있는 구조면 좋겠어요."</blockquote>
+<blockquote>"한국에서 재생 안 되는 곡을 추천 풀에 넣으면 의미가 없잖아요."</blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 4. AI 인터뷰 결과 ===== -->
+<h1 id="sec4">4. 사용자 조사 — AI 인터뷰 결과</h1>
+
+<h3>4.1 인터뷰 진행 방법</h3>
+<p>
+본 프로젝트의 AI 인터뷰는 <strong>C-0001 결정 (부록 B 참조)</strong>에 따라 <strong>(a) AI에 페르소나를 부여한 후 인터뷰 시뮬레이션</strong> 형식으로 진행되었다. 각 페르소나별로 설정 프롬프트를 작성하여 AI에 역할을 부여하고, 인터뷰어가 질문하면 해당 페르소나의 관점에서 응답하는 대화 로그를 생성하였다. 전체 인터뷰 로그는 부록 A에 수록되어 있다.
+</p>
+<div class="highlight-box">
+  <strong>형식 확정 근거 (C-0001):</strong> "AI 시뮬레이션 로그"는 AI를 사용자 대리로 두고 시스템을 테스트하는 (b)가 아닌, AI에 페르소나 부여 후 인터뷰 시뮬레이션 대화 로그인 (a)로 확정됨. 현재 구조 <code>docs/ai-interviews/persona-*.md</code>가 본 결정과 일치한다.
+</div>
+<ul>
+  <li>인터뷰 파일 구조: 페르소나 프로필 + 설정 프롬프트 + 인터뷰 대화 로그 한 파일 통합</li>
+  <li>대상 페르소나: 김지원 (사용자), 박서준 (사용자), 이수민 (관리자)</li>
+  <li>질문 영역: 현재 음악 사용 패턴 / 기존 앱 불만 / 신규 기능 수용성 / 프라이버시 우려</li>
+</ul>
+
+<h3>4.2 페르소나별 핵심 니즈 도출 결과</h3>
+<table>
+  <thead>
+    <tr><th>페르소나</th><th>도출된 핵심 니즈</th><th>연결 FR/NFR</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="5"><strong>김지원</strong><br>(27세, IT 직장인)</td>
+      <td>말 한마디로 현재 감정 기반 음악 추천</td>
+      <td>FR2.1, FR2.2, FR2.4</td>
+    </tr>
+    <tr>
+      <td>최근 이력이 아닌 지금 이 순간 감정 기반 추천</td>
+      <td>FR3.1–FR3.4</td>
+    </tr>
+    <tr>
+      <td>추천 이유 한두 줄 (짧게)</td>
+      <td>FR4.3, FR5.3</td>
+    </tr>
+    <tr>
+      <td>추천 곡 즉시 재생</td>
+      <td>FR5.4</td>
+    </tr>
+    <tr>
+      <td>음성 원본 분석 후 즉시 삭제 명시</td>
+      <td>NFR3.2</td>
+    </tr>
+    <tr>
+      <td rowspan="5"><strong>박서준</strong><br>(22세, 음악 전공)</td>
+      <td>내 감성이 valence×energy 2D 공간 어디에 있는지 시각화</td>
+      <td>FR5.1</td>
+    </tr>
+    <tr>
+      <td>추천 이유 — 음악 특성과 감정의 연결 근거</td>
+      <td>FR5.3</td>
+    </tr>
+    <tr>
+      <td>좋아요 누적 → 나만의 감성 지도 형성</td>
+      <td>FR6.1–FR6.4</td>
+    </tr>
+    <tr>
+      <td>이력 조회로 감성 패턴 파악</td>
+      <td>FR6.5</td>
+    </tr>
+    <tr>
+      <td>멀티 기기 동기화 (연습실 PC + 집 노트북), STT 동의 기반 저장</td>
+      <td>FR1.1–FR1.4, NFR3.3</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><strong>이수민</strong><br>(34세, 큐레이터)</td>
+      <td>YouTube 플리 URL → Spotify 자동 매칭 + 카탈로그 적재</td>
+      <td>FR7.1, FR7.2</td>
+    </tr>
+    <tr>
+      <td>주기적 자동 업데이트 + 미매칭 알림</td>
+      <td>FR7.3</td>
+    </tr>
+    <tr>
+      <td>라이선스/지역 가용성 자동 필터링</td>
+      <td>FR7.4</td>
+    </tr>
+    <tr>
+      <td>24시간 무중단 서비스 + 피드백 데이터 기반 카탈로그 품질 관리</td>
+      <td>FR4.4, FR6.2, FR6.5, NFR2.2</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 5. 유스케이스 다이어그램 ===== -->
+<h1 id="sec5">5. 유스케이스 다이어그램</h1>
+
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif" style="max-width: 100%; height: auto;">
+  <!-- Title -->
+  <text x="500" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">
+    유스케이스 다이어그램 — AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- ============ 시스템 박스 ============ -->
+  <rect x="320" y="65" width="360" height="620" rx="8" ry="8"
+        fill="#FAFAFA" stroke="#1976D2" stroke-width="2"/>
+  <text x="500" y="90" text-anchor="middle" font-size="14" font-weight="700" fill="#0D47A1">
+    AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- ============ 유스케이스 8개 (타원) ============ -->
+  <!-- UC-01 회원가입 -->
+  <ellipse cx="500" cy="130" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="128" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-01</text>
+  <text x="500" y="143" text-anchor="middle" font-size="12" fill="#212121">회원가입</text>
+
+  <!-- UC-02 로그인 -->
+  <ellipse cx="500" cy="185" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="183" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-02</text>
+  <text x="500" y="198" text-anchor="middle" font-size="12" fill="#212121">로그인 / 로그아웃</text>
+
+  <!-- UC-07 프로필 수정 -->
+  <ellipse cx="500" cy="240" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="238" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-07</text>
+  <text x="500" y="253" text-anchor="middle" font-size="12" fill="#212121">프로필 수정</text>
+
+  <!-- UC-03 음성으로 추천 받기 (핵심) -->
+  <ellipse cx="500" cy="330" rx="115" ry="30" fill="#FFE0B2" stroke="#E65100" stroke-width="2.5"/>
+  <text x="500" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#BF360C">⭐ UC-03</text>
+  <text x="500" y="343" text-anchor="middle" font-size="12" font-weight="600" fill="#212121">음성으로 음악 추천 받기</text>
+
+  <!-- UC-04 추천 곡 재생 -->
+  <ellipse cx="500" cy="420" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="418" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-04</text>
+  <text x="500" y="433" text-anchor="middle" font-size="12" fill="#212121">추천 곡 재생</text>
+
+  <!-- UC-05 피드백 -->
+  <ellipse cx="500" cy="485" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="483" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-05</text>
+  <text x="500" y="498" text-anchor="middle" font-size="12" fill="#212121">피드백 남기기</text>
+
+  <!-- UC-06 추천 이력 조회 -->
+  <ellipse cx="500" cy="545" rx="95" ry="22" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="500" y="543" text-anchor="middle" font-size="11" font-weight="600" fill="#0D47A1">UC-06</text>
+  <text x="500" y="558" text-anchor="middle" font-size="12" fill="#212121">추천 이력 조회</text>
+
+  <!-- UC-08 카탈로그 새로고침 (관리자) -->
+  <ellipse cx="500" cy="635" rx="105" ry="22" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+  <text x="500" y="633" text-anchor="middle" font-size="11" font-weight="600" fill="#4A148C">UC-08</text>
+  <text x="500" y="648" text-anchor="middle" font-size="12" fill="#212121">음악 카탈로그 새로고침</text>
+
+  <!-- ============ 액터: 사용자 (왼쪽) ============ -->
+  <g transform="translate(150, 330)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="14" x2="0" y2="50" stroke="#212121" stroke-width="2"/>
+    <line x1="-18" y1="25" x2="18" y2="25" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="-15" y2="75" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="15" y2="75" stroke="#212121" stroke-width="2"/>
+    <text x="0" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#212121">사용자</text>
+  </g>
+
+  <!-- ============ 액터: 관리자 (왼쪽 하단) ============ -->
+  <g transform="translate(150, 620)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="14" x2="0" y2="50" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="-18" y1="25" x2="18" y2="25" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="50" x2="-15" y2="75" stroke="#6A1B9A" stroke-width="2"/>
+    <line x1="0" y1="50" x2="15" y2="75" stroke="#6A1B9A" stroke-width="2"/>
+    <text x="0" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#4A148C">관리자</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: Spotify ============ -->
+  <g transform="translate(820, 270)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#F1F8E9" stroke="#33691E" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#558B2F">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#33691E">Spotify API</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: LLM ============ -->
+  <g transform="translate(820, 380)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#FFF3E0" stroke="#E65100" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#EF6C00">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#E65100">LLM API</text>
+  </g>
+
+  <!-- ============ 외부 시스템 액터: YouTube ============ -->
+  <g transform="translate(820, 610)">
+    <rect x="0" y="0" width="130" height="50" rx="6" fill="#FFEBEE" stroke="#B71C1C" stroke-width="1.8"/>
+    <text x="65" y="20" text-anchor="middle" font-size="10" font-style="italic" fill="#C62828">«system»</text>
+    <text x="65" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#B71C1C">YouTube API</text>
+  </g>
+
+  <!-- ============ 관계: 사용자 ─ UC들 (실선) ============ -->
+  <line x1="168" y1="320" x2="405" y2="130" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="320" x2="405" y2="185" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="325" x2="405" y2="240" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="330" x2="385" y2="330" stroke="#424242" stroke-width="1.8"/>
+  <line x1="168" y1="340" x2="405" y2="420" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="345" x2="405" y2="485" stroke="#424242" stroke-width="1.3"/>
+  <line x1="168" y1="350" x2="405" y2="545" stroke="#424242" stroke-width="1.3"/>
+
+  <!-- ============ 관계: 관리자 ─ UC-08 ============ -->
+  <line x1="168" y1="635" x2="395" y2="635" stroke="#6A1B9A" stroke-width="1.5"/>
+
+  <!-- ============ 관계: UC-03 ─ Spotify, LLM ============ -->
+  <line x1="615" y1="320" x2="820" y2="285" stroke="#33691E" stroke-width="1.3"/>
+  <line x1="615" y1="340" x2="820" y2="400" stroke="#E65100" stroke-width="1.3"/>
+
+  <!-- ============ 관계: UC-04 ─ Spotify ============ -->
+  <line x1="595" y1="415" x2="820" y2="295" stroke="#33691E" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.7"/>
+
+  <!-- ============ 관계: UC-08 ─ YouTube, Spotify ============ -->
+  <line x1="605" y1="630" x2="820" y2="625" stroke="#B71C1C" stroke-width="1.3"/>
+  <line x1="605" y1="625" x2="820" y2="310" stroke="#33691E" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.7"/>
+
+  <!-- ============ Include 관계 (UC-03 includes UC-02) ============ -->
+  <line x1="500" y1="300" x2="500" y2="207" stroke="#1565C0" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#openArrow)"/>
+  <rect x="510" y="245" width="78" height="16" fill="#FAFAFA"/>
+  <text x="549" y="257" text-anchor="middle" font-size="10" font-style="italic" fill="#1565C0">«include»</text>
+
+  <!-- ============ Extend 관계 (UC-05 extends UC-04) ============ -->
+  <line x1="500" y1="463" x2="500" y2="442" stroke="#7B1FA2" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#openArrow)"/>
+  <rect x="510" y="448" width="76" height="14" fill="#FAFAFA"/>
+  <text x="548" y="459" text-anchor="middle" font-size="10" font-style="italic" fill="#7B1FA2">«extend»</text>
+
+  <!-- Arrow marker (open) -->
+  <defs>
+    <marker id="openArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 범례 ============ -->
+  <g transform="translate(40, 30)">
+    <rect x="0" y="0" width="200" height="100" rx="4" fill="#FFFFFF" stroke="#BDBDBD" stroke-width="1"/>
+    <text x="10" y="18" font-size="11" font-weight="700" fill="#212121">범례</text>
+    <line x1="10" y1="32" x2="35" y2="32" stroke="#424242" stroke-width="1.3"/>
+    <text x="42" y="36" font-size="10" fill="#424242">Association</text>
+    <line x1="10" y1="50" x2="35" y2="50" stroke="#1565C0" stroke-width="1.2" stroke-dasharray="5,3"/>
+    <text x="42" y="54" font-size="10" fill="#424242">«include» / «extend»</text>
+    <ellipse cx="22" cy="68" rx="12" ry="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5"/>
+    <text x="42" y="72" font-size="10" fill="#424242">핵심 유스케이스</text>
+    <ellipse cx="22" cy="86" rx="12" ry="6" fill="#F3E5F5" stroke="#6A1B9A" stroke-width="1.5"/>
+    <text x="42" y="90" font-size="10" fill="#424242">관리자 유스케이스</text>
+  </g>
+</svg>
+<figcaption>그림 1. AI 감정분석 음악추천 시스템 유스케이스 다이어그램. UC-03(핵심)은 주황색 타원으로 강조 표시.</figcaption>
+</figure>
+
+<h3>액터 설명</h3>
+<table>
+  <thead><tr><th>액터</th><th>위치</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td>사용자</td><td>시스템 경계 외부 (왼쪽)</td><td>UC-01~UC-07 수행. 음성 입력부터 피드백까지 주 사용 흐름을 담당</td></tr>
+    <tr><td>관리자</td><td>시스템 경계 외부 (왼쪽 하단)</td><td>UC-08 수행. 음악 카탈로그 동기화 및 품질 관리</td></tr>
+    <tr><td>Spotify API</td><td>시스템 경계 외부 (오른쪽)</td><td>UC-03, UC-04에서 오디오 특성 및 트랙 메타 제공</td></tr>
+    <tr><td>LLM API</td><td>시스템 경계 외부 (오른쪽)</td><td>UC-03에서 맥락 분석 및 추천 이유 생성</td></tr>
+    <tr><td>YouTube API</td><td>시스템 경계 외부 (오른쪽)</td><td>UC-08에서 감성 플리 시드 트랙 추출</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 6. 유스케이스 명세 ===== -->
+<h1 id="sec6">6. 유스케이스 명세</h1>
+
+<h3>6.1 유스케이스 목록</h3>
+<table>
+  <thead><tr><th>ID</th><th>이름</th><th>Primary Actor</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><code>UC-01</code></td><td>회원가입</td><td>사용자</td><td></td></tr>
+    <tr><td><code>UC-02</code></td><td>로그인 / 로그아웃</td><td>사용자</td><td>UC-03에 «include»</td></tr>
+    <tr><td><code>UC-03</code></td><td><strong>음성으로 음악 추천 받기 ⭐</strong></td><td>사용자</td><td>핵심 유스케이스</td></tr>
+    <tr><td><code>UC-04</code></td><td>추천 곡 재생</td><td>사용자</td><td>UC-05가 «extend»</td></tr>
+    <tr><td><code>UC-05</code></td><td>피드백 남기기 (좋아요/싫어요)</td><td>사용자</td><td></td></tr>
+    <tr><td><code>UC-06</code></td><td>추천 이력 조회</td><td>사용자</td><td></td></tr>
+    <tr><td><code>UC-07</code></td><td>프로필 수정</td><td>사용자</td><td></td></tr>
+    <tr><td><code>UC-08</code></td><td>음악 카탈로그 새로고침</td><td>관리자</td><td></td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 핵심 유스케이스 상세 명세 — UC-03</h3>
+
+<table>
+  <thead><tr><th>항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td><strong>ID</strong></td><td>UC-03</td></tr>
+    <tr><td><strong>이름</strong></td><td>음성으로 음악 추천 받기</td></tr>
+    <tr><td><strong>설명</strong></td><td>사용자가 자신의 현재 상태를 음성으로 표현하면, 시스템이 음성의 감정과 맥락을 분석해 음악을 추천한다</td></tr>
+    <tr><td><strong>Primary Actor</strong></td><td>사용자</td></tr>
+    <tr><td><strong>Secondary Actors</strong></td><td>Spotify Web API, LLM API</td></tr>
+    <tr><td><strong>사전 조건</strong></td><td>1. 사용자가 로그인되어 있음<br>2. 마이크 권한이 허용되어 있음<br>3. 음악 카탈로그가 1회 이상 동기화되어 있음</td></tr>
+    <tr><td><strong>사후 조건</strong></td><td>1. 추천 결과가 화면에 표시됨<br>2. 추천 요청 이력이 사용자 프로필에 기록됨</td></tr>
+    <tr><td><strong>트리거</strong></td><td>사용자가 메인 화면의 "녹음 시작" 버튼 클릭</td></tr>
+  </tbody>
+</table>
+
+<h4>주 시나리오 (Main Flow)</h4>
+<ol>
+  <li>사용자가 "녹음 시작"을 누른다.</li>
+  <li>시스템이 마이크를 활성화하고 시각적 피드백(파형)을 표시한다.</li>
+  <li>사용자가 자신의 상태를 말한다.</li>
+  <li>사용자가 "녹음 종료"를 누르거나 60초가 경과한다.</li>
+  <li>시스템이 음성을 백엔드로 전송한다 (TLS).</li>
+  <li>백엔드는 다음을 <strong>병렬로</strong> 수행한다:
+    <ul>
+      <li><strong>(a)</strong> <code>EmotionClassifier</code>로 감정 벡터 추출</li>
+      <li><strong>(b)</strong> <code>STTService</code>로 텍스트 변환 → <code>ContextAnalyzer</code>(LLM)로 맥락 표현 추출</li>
+    </ul>
+  </li>
+  <li><code>EmotionFusion</code>이 (a)와 (b)를 융합한다.</li>
+  <li><code>RecommendationEngine</code>이 융합 결과로 카탈로그에서 유사도 매칭하여 상위 10곡을 선정한다.</li>
+  <li>LLM이 각 추천 곡에 대한 짧은 추천 이유를 생성한다.</li>
+  <li>시스템이 추천 결과를 클라이언트로 응답한다 (≤ 3초, NFR1.1).</li>
+  <li>클라이언트가 2D 감정-음악 매핑 차트와 곡 리스트, 추천 이유를 렌더링한다.</li>
+</ol>
+
+<h4>대체 시나리오 (Alternative Flows)</h4>
+<ul>
+  <li><strong>A1 (LLM API 장애):</strong> 6(b)에서 LLM 응답 실패 → 룰베이스 키워드 추출로 fallback (NFR2.3). 추천 이유는 "유사 감성 곡" 같은 기본 텍스트로 대체.</li>
+  <li><strong>A2 (ML 모델 장애):</strong> 6(a)에서 EmotionClassifier 실패 → 맥락 표현만으로 추천 진행 (NFR2.4).</li>
+  <li><strong>A3 (Spotify API 호출 실패):</strong> 캐시된 카탈로그에서만 매칭. 캐시도 비어있으면 오류 메시지 표시.</li>
+</ul>
+
+<h4>예외 시나리오 (Exception Flows)</h4>
+<ul>
+  <li><strong>E1 (마이크 권한 거부):</strong> 1단계에서 권한 거부 → 권한 안내 다이얼로그 표시, 유스케이스 종료.</li>
+  <li><strong>E2 (음성이 너무 짧음, &lt;2초):</strong> 5단계에서 검증 실패 → "조금 더 길게 말씀해 주세요" 안내, 1단계로 복귀.</li>
+  <li><strong>E3 (네트워크 단절):</strong> 5단계에서 전송 실패 → 재시도 옵션 제공.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ===== 7. 기능 요구사항 ===== -->
+<h1 id="sec7">7. 기능 요구사항 (FR)</h1>
+
+<p>우선순위: <span class="badge must">M Must</span> 필수 &nbsp; <span class="badge should">S Should</span> 권장 &nbsp; <span class="badge could">C Could</span> 선택</p>
+
+<h3>FR1. 사용자 계정 관리</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR1.1</code></td><td>이메일/비밀번호로 회원가입</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR1.2</code></td><td>로그인 / 로그아웃</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR1.3</code></td><td>프로필 정보 수정 (선호 장르, 닉네임 등)</td><td><span class="badge should">S</span></td></tr>
+    <tr><td><code>FR1.4</code></td><td>계정 탈퇴 (개인 데이터 영구 삭제)</td><td><span class="badge must">M</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR2. 음성 기반 감정 입력</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR2.1</code></td><td>마이크 권한 요청 및 음성 녹음 (Electron MediaRecorder)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR2.2</code></td><td>녹음된 음성을 백엔드로 안전하게 전송 (TLS)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR2.3</code></td><td>녹음 중 시각적 피드백 (파형 또는 타이머)</td><td><span class="badge should">S</span></td></tr>
+    <tr><td><code>FR2.4</code></td><td>최대 녹음 시간 제한 (기본 60초)</td><td><span class="badge must">M</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR3. 감정 및 맥락 분석 (듀얼 트랙)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR3.1</code></td><td>음성에서 감정 벡터 추출 — <code>EmotionClassifier</code></td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR3.2</code></td><td>음성 → 텍스트 변환 — <code>STTService</code></td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR3.3</code></td><td>텍스트에서 맥락 표현 추출 — <code>ContextAnalyzer</code> (LLM)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR3.4</code></td><td>감정 벡터 + 맥락 표현 융합 — <code>EmotionFusion</code></td><td><span class="badge must">M</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR4. 음악 추천</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR4.1</code></td><td>융합 결과 → 카탈로그 유사도 매칭 — <code>RecommendationEngine</code></td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR4.2</code></td><td>상위 K개 추천 곡 반환 (기본 K=10)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR4.3</code></td><td>각 추천 곡에 LLM 기반 추천 이유 첨부</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR4.4</code></td><td>동일 입력에 대한 결과 캐싱 (TTL: 1시간)</td><td><span class="badge should">S</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR5. 추천 결과 시각화</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR5.1</code></td><td>감정-음악 2D 매핑 차트 (valence × energy 평면)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR5.2</code></td><td>추천 곡 리스트 (앨범 아트, 곡명, 아티스트)</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR5.3</code></td><td>추천 이유 텍스트 표시</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR5.4</code></td><td>곡 재생 (YouTube embed 또는 Spotify 30초 preview)</td><td><span class="badge must">M</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR6. 피드백 수집 및 개인화</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR6.1</code></td><td>곡별 좋아요/싫어요 입력</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR6.2</code></td><td>재생 시작/종료/완료 이벤트 로깅</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR6.3</code></td><td>피드백을 사용자 프로필에 누적</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR6.4</code></td><td>누적 피드백을 추천 시 가중치로 반영</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR6.5</code></td><td>추천 이력 조회 (최근 N개)</td><td><span class="badge should">S</span></td></tr>
+  </tbody>
+</table>
+
+<h3>FR7. 음악 카탈로그 관리 (관리자)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>우선순위</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR7.1</code></td><td>YouTube 감성 플리에서 시드 트랙 추출</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR7.2</code></td><td>추출된 트랙을 Spotify에서 매칭 → 카탈로그 적재</td><td><span class="badge must">M</span></td></tr>
+    <tr><td><code>FR7.3</code></td><td>주기적 카탈로그 새로고침 (스케줄러 또는 수동 트리거)</td><td><span class="badge should">S</span></td></tr>
+    <tr><td><code>FR7.4</code></td><td>라이선스/지역 가용성 필터링</td><td><span class="badge should">S</span></td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 8. 비기능 요구사항 ===== -->
+<h1 id="sec8">8. 비기능 요구사항 (NFR)</h1>
+
+<h3>NFR1. 성능 (Performance)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th><th>측정 방법</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR1.1</code></td><td>음성 전송 → 추천 응답 시간 ≤ <strong>3초</strong> (P95)</td><td>부하 테스트</td></tr>
+    <tr><td><code>NFR1.2</code></td><td>동시 사용자 <strong>100명</strong> 처리 가능</td><td>부하 테스트</td></tr>
+    <tr><td><code>NFR1.3</code></td><td>ML 추론 ≤ <strong>1.5초</strong></td><td>컴포넌트 벤치마크</td></tr>
+  </tbody>
+</table>
+
+<h3>NFR2. 가용성 (Availability)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR2.1</code></td><td>백엔드 API 가용성 ≥ <strong>99%</strong> (월간)</td></tr>
+    <tr><td><code>NFR2.2</code></td><td><strong>Blue-Green 배포</strong>로 무중단 업데이트 (다운타임 0초)</td></tr>
+    <tr><td><code>NFR2.3</code></td><td>LLM API 장애 시 fallback: 룰베이스 맥락 추출로 추천 지속</td></tr>
+    <tr><td><code>NFR2.4</code></td><td>ML 모델 장애 시 fallback: 텍스트 기반 추천만으로 응답</td></tr>
+  </tbody>
+</table>
+
+<h3>NFR3. 보안 및 프라이버시 (Security &amp; Privacy)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR3.1</code></td><td>모든 통신은 <strong>TLS 1.2+</strong> 사용</td></tr>
+    <tr><td><code>NFR3.2</code></td><td>음성 원본은 분석 후 <strong>즉시 폐기</strong> (감정 벡터만 저장)</td></tr>
+    <tr><td><code>NFR3.3</code></td><td>STT 변환 텍스트는 사용자 동의 시에만 저장</td></tr>
+    <tr><td><code>NFR3.4</code></td><td>비밀번호 <strong>bcrypt</strong> 해싱 (cost ≥ 12)</td></tr>
+    <tr><td><code>NFR3.5</code></td><td>API 키는 환경변수로 관리, 클라이언트에 노출 금지</td></tr>
+  </tbody>
+</table>
+
+<h3>NFR4. 신뢰성 / 품질 (Reliability &amp; Quality)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR4.1</code></td><td>추천 품질: 좋아요율 ≥ <strong>50%</strong> (베타 기준)</td></tr>
+    <tr><td><code>NFR4.2</code></td><td>Precision@10 ≥ <strong>0.4</strong></td></tr>
+    <tr><td><code>NFR4.3</code></td><td>ML 모델 정확도 (캐글 테스트셋) ≥ <strong>70%</strong></td></tr>
+    <tr><td><code>NFR4.4</code></td><td>단위/통합 테스트 커버리지 ≥ <strong>70%</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>NFR5. 사용성 (Usability)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR5.1</code></td><td>첫 추천까지 음성 입력 ≤ <strong>3 클릭</strong></td></tr>
+    <tr><td><code>NFR5.2</code></td><td>차트는 색맹 대응 색상 팔레트 사용</td></tr>
+  </tbody>
+</table>
+
+<h3>NFR6. 이식성 (Portability)</h3>
+<table>
+  <thead><tr><th>ID</th><th>요구사항</th></tr></thead>
+  <tbody>
+    <tr><td><code>NFR6.1</code></td><td>Windows 10+, macOS 12+, Ubuntu 22+ 지원</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 9. 인터뷰 → FR/NFR 매핑 ===== -->
+<h1 id="sec9">9. 인터뷰 → FR/NFR 매핑</h1>
+
+<h3>9.1 페르소나 × 니즈 × FR/NFR 매핑</h3>
+<table>
+  <thead><tr><th>페르소나</th><th>도출된 니즈</th><th>FR/NFR ID</th><th>SRS 항목명</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="5">김지원<br>(27세, IT 직장인)</td><td>"말 한마디로 음악 찾고 싶음 — 손이 바빠도 음성 한 번으로"</td><td>FR2.1, FR2.2, FR2.4</td><td>음성 녹음 / 안전 전송 / 최대 녹음 제한</td></tr>
+    <tr><td>"오늘 기분에 맞는 추천 — 최근 이력 기반 아닌 현재 감정 기반"</td><td>FR3.1–3.4</td><td>EmotionClassifier / STTService / ContextAnalyzer / EmotionFusion</td></tr>
+    <tr><td>"왜 이 곡인지 한두 줄만 — 너무 길면 안 읽음"</td><td>FR4.3, FR5.3</td><td>LLM 추천 이유 첨부 / 추천 이유 텍스트 표시</td></tr>
+    <tr><td>"마음에 든 곡 바로 재생"</td><td>FR5.4</td><td>곡 재생 (YouTube embed 또는 Spotify preview)</td></tr>
+    <tr><td>"음성 녹음 후 원본 삭제된다는 게 명확해야 함"</td><td>NFR3.2</td><td>음성 원본 분석 후 즉시 폐기</td></tr>
+    <tr><td rowspan="5">박서준<br>(22세, 음악 전공)</td><td>"내 감성이 2D 공간 어디에 있는지 데이터로 확인"</td><td>FR5.1</td><td>감정-음악 2D 매핑 차트 (valence × energy)</td></tr>
+    <tr><td>"왜 이 곡인지 — 음악 특성과 감정의 연결 고리"</td><td>FR5.3</td><td>추천 이유 텍스트 표시</td></tr>
+    <tr><td>"좋아요 누적 → 나만의 감성 지도 형성"</td><td>FR6.1–6.4</td><td>좋아요·싫어요 / 재생 이벤트 로깅 / 프로필 누적 / 추천 가중치 반영</td></tr>
+    <tr><td>"이력 조회로 '요즘 나는 low valence 쪽' 패턴 파악"</td><td>FR6.5</td><td>추천 이력 조회 (최근 N개)</td></tr>
+    <tr><td>"연습실 PC + 집 노트북 — 피드백 히스토리 동기화" / "동의 받고 저장"</td><td>FR1.1–1.4, NFR3.3</td><td>회원가입 / 로그인 / 계정 탈퇴 / STT 동의 저장</td></tr>
+    <tr><td rowspan="4">이수민<br>(34세, 큐레이터)</td><td>"YouTube 플리 URL → Spotify 매칭 자동화 파이프라인"</td><td>FR7.1, FR7.2</td><td>YouTube 시드 트랙 추출 / Spotify 매칭 → 카탈로그 적재</td></tr>
+    <tr><td>"주기적 자동 업데이트 + 미매칭 알림으로 확인 가능"</td><td>FR7.3</td><td>주기적 카탈로그 새로고침</td></tr>
+    <tr><td>"한국서 재생 불가 곡은 추천 풀에서 제외"</td><td>FR7.4</td><td>라이선스 / 지역 가용성 필터링</td></tr>
+    <tr><td>"사용자 피드백 통계로 카탈로그 품질 개선" / "24시간 청중 — 무중단 배포"</td><td>FR4.4, FR6.2, FR6.5, NFR2.2</td><td>결과 캐싱 / 재생 이벤트 로깅 / 이력 조회 / Blue-Green 배포</td></tr>
+  </tbody>
+</table>
+
+<h3>9.2 FR/NFR 역추적 (SRS v1 → 인터뷰 출처)</h3>
+<table>
+  <thead><tr><th>FR/NFR ID</th><th>SRS v1 항목명</th><th>근거 페르소나</th><th>인터뷰 직접 인용</th></tr></thead>
+  <tbody>
+    <tr><td><code>FR1.1</code></td><td>이메일/비밀번호 회원가입</td><td>박서준</td><td>"제 피드백 히스토리가 동기화돼야 의미가 있을 것 같아요"</td></tr>
+    <tr><td><code>FR1.2</code></td><td>로그인 / 로그아웃</td><td>박서준</td><td>위 동일 맥락</td></tr>
+    <tr><td><code>FR1.4</code></td><td>계정 탈퇴 (개인 데이터 삭제)</td><td>박서준</td><td>"STT 텍스트가 남는 건 좀 신경 쓰여요"</td></tr>
+    <tr><td><code>FR2.1</code></td><td>마이크 권한 요청 및 음성 녹음</td><td>김지원</td><td>"말 한마디로 찾고 싶음"</td></tr>
+    <tr><td><code>FR2.2</code></td><td>음성 백엔드 안전 전송 (TLS)</td><td>김지원</td><td>"내 목소리 녹음되는 거 좀 찜찜할 수도"</td></tr>
+    <tr><td><code>FR3.1</code></td><td>EmotionClassifier — 음성→감정 벡터</td><td>김지원</td><td>"오늘 회의에서 발표 망했어 → 알아서 맞는 거 찾아주면"</td></tr>
+    <tr><td><code>FR3.3</code></td><td>ContextAnalyzer — LLM 맥락 추출</td><td>김지원</td><td>"힘들었어, 화났어 같은 우회적 표현"</td></tr>
+    <tr><td><code>FR4.3</code></td><td>LLM 추천 이유 첨부</td><td>김지원, 박서준</td><td>"짧게는 보고 싶죠 한두 줄" / "왜 이 곡인지를 모르겠어요"</td></tr>
+    <tr><td><code>FR4.4</code></td><td>결과 캐싱 (TTL 1시간)</td><td>이수민</td><td>"동기화 중에도 기존 추천 응답 유지"</td></tr>
+    <tr><td><code>FR5.1</code></td><td>감정-음악 2D 차트</td><td>박서준</td><td>"valence-energy 시각적으로 보이면 진짜 좋겠다"</td></tr>
+    <tr><td><code>FR6.1</code></td><td>좋아요/싫어요 입력</td><td>김지원, 박서준</td><td>"좋아요를 눌러 다음 추천에 반영" / "좋아요 누적 → 감성 지도"</td></tr>
+    <tr><td><code>FR6.5</code></td><td>추천 이력 조회</td><td>박서준, 이수민</td><td>"'나 요즘 항상 low valence' 파악" / "좋아요율 낮은 3곡 제외"</td></tr>
+    <tr><td><code>FR7.1</code></td><td>YouTube 시드 트랙 추출</td><td>이수민</td><td>"YouTube 플리 URL 넣으면 트랙 목록 뽑아서"</td></tr>
+    <tr><td><code>FR7.2</code></td><td>Spotify 매칭 → 카탈로그 적재</td><td>이수민</td><td>"Spotify에서 매칭하고 카탈로그에 올려주는 거요"</td></tr>
+    <tr><td><code>FR7.4</code></td><td>라이선스/지역 필터링</td><td>이수민</td><td>"한국에서 재생 안 되는 곡을 추천 풀에 넣으면 의미가 없잖아요"</td></tr>
+    <tr><td><code>NFR2.2</code></td><td>Blue-Green 무중단 배포</td><td>이수민</td><td>"업데이트 공지 없이 갑자기 다운되면 민망하죠"</td></tr>
+    <tr><td><code>NFR3.2</code></td><td>음성 원본 즉시 폐기</td><td>김지원</td><td>"분석 후에 삭제된다는 게 명확했으면 좋겠어요"</td></tr>
+    <tr><td><code>NFR3.3</code></td><td>STT 텍스트 동의 기반 저장</td><td>박서준</td><td>"동의 받고 저장하는 방식이면 괜찮을 것 같아요"</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 10. 가정 및 제약사항 ===== -->
+<h1 id="sec10">10. 가정 및 제약사항</h1>
+
+<h3>가정 (Assumptions)</h3>
+<ul>
+  <li>사용자는 본인 음성을 정상적으로 녹음할 수 있는 환경에 있다 (마이크 보유).</li>
+  <li>Spotify Web API의 audio features는 추천 매칭에 사용 가능한 수준의 메타데이터를 제공한다.</li>
+  <li>LLM API의 응답 시간은 평균 2초 이내이다.</li>
+</ul>
+
+<h3>제약사항 (Constraints)</h3>
+<ul>
+  <li>Spotify Premium 계정이 없는 사용자를 위해 실제 재생은 YouTube embed 또는 30초 preview로 제한된다.</li>
+  <li>캐글 dataset의 라이선스 범위 내에서만 학습 모델을 사용한다.</li>
+  <li>학기말 프로젝트 기간 (약 4–6주) 내에 핵심 유스케이스 (UC-03)를 시연 가능한 수준까지 구현해야 한다.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ===== 부록 A ===== -->
+<h1 id="appA">부록 A. AI 시뮬레이션 로그</h1>
+
+<p>
+본 부록은 C-0001 결정에 따라 <strong>(a) AI에 페르소나를 부여한 후 수행한 인터뷰 시뮬레이션</strong>의 전체 대화 로그를 수록한다. 각 파일은 설정 프롬프트와 인터뷰 전체 대화로 구성된다.
+</p>
+
+<!-- 인터뷰 1: 김지원 -->
+<div class="appendix-log">
+<h4>A-1. 페르소나: 김지원 (27세, IT 스타트업 백엔드 개발자)</h4>
+
+<h5>페르소나 프로필</h5>
+<table>
+  <tbody>
+    <tr><th>이름</th><td>김지원</td></tr>
+    <tr><th>나이</th><td>27세</td></tr>
+    <tr><th>직업</th><td>IT 스타트업 백엔드 개발자</td></tr>
+    <tr><th>음악 청취 맥락</th><td>야근 후 퇴근길 지하철, 점심 산책 중. 그날 감정 상태에 따라 장르가 확연히 달라짐</td></tr>
+    <tr><th>페인 포인트</th><td>스포티파이 추천이 "최근 들은 곡 기반"이라 현재 감정과 안 맞을 때가 많음. 기분 전환이 필요한 순간에 오히려 익숙한 곡만 반복됨</td></tr>
+    <tr><th>목표</th><td>지금 이 순간 내 기분에 딱 맞는 음악을, 길게 검색하지 않고 말 한마디로 찾고 싶음</td></tr>
+    <tr><th>관련 FR</th><td>FR2 (음성 입력), FR3 (감정·맥락 분석), FR4 (음악 추천), FR5.4 (재생)</td></tr>
+  </tbody>
+</table>
+
+<h5>설정 프롬프트</h5>
+<p>당신은 김지원, 27세 IT 스타트업 백엔드 개발자. 야근이 잦고, 퇴근길 지하철에서 음악으로 기분 전환을 즐김. 감정 표현은 직접적이기보단 우회적. 음악 취향은 인디·락·EDM 등 폭넓고, 기분에 따라 장르가 바뀜. 스포티파이를 주로 쓰지만 추천 알고리즘에 약간 지쳐 있음.</p>
+
+<h5>인터뷰 대화 로그</h5>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 안녕하세요. 평소 음악을 어떻게 들으시나요?</div>
+<div class="dialogue"><span class="speaker persona">[김지원]</span> 아 음... 주로 야근 끝나고 집 오는 길에 많이 들어요. 그날 기분 따라 좀 다른데, 지칠 땐 잔잔한 인디, 화나면 락이나 EDM, 슬플 땐 발라드 같은 식이에요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 지금 쓰시는 음악 앱에서 아쉬운 점은요?</div>
+<div class="dialogue"><span class="speaker persona">[김지원]</span> 스포티파이 쓰는데, "최근 들은 곡 기반" 추천이 대부분이라 그날 기분이랑 안 맞을 때가 많아요. 패턴이 너무 반복돼서... 오늘 엄청 지쳤는데 지난주에 신나게 들었던 곡들 계속 나오면 좀 이상하잖아요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 그럼 어떻게 해결하세요?</div>
+<div class="dialogue"><span class="speaker persona">[김지원]</span> 그냥 직접 검색하거나 분위기별 플리 뒤지죠. 근데 그것도 귀찮아서 결국 그냥 아무 거나 틀거나 꺼버리는 경우가 많아요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 만약 지금 기분을 말로 표현하면 음악을 추천해 주는 앱이 있다면 어떨 것 같으세요?</div>
+<div class="dialogue"><span class="speaker persona">[김지원]</span> 오... 그거 진짜 쓸 것 같은데요. "오늘 회의에서 발표 망했어" 이런 거 말하면 알아서 맞는 거 찾아주면 완전 좋겠다. 근데 내 목소리 녹음되는 거 좀 찜찜할 수도 있어서, 분석 후에 삭제된다는 게 명확했으면 좋겠어요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 추천 이유 설명도 있으면 도움이 될까요?</div>
+<div class="dialogue"><span class="speaker persona">[김지원]</span> 음, 짧게는 보고 싶죠. 왜 이 곡인지 한두 줄 정도. 근데 너무 길면 안 읽을 것 같아요.</div>
+</div>
+
+<!-- 인터뷰 2: 박서준 -->
+<div class="appendix-log">
+<h4>A-2. 페르소나: 박서준 (22세, 실용음악과 3학년 — 작곡 전공)</h4>
+
+<h5>페르소나 프로필</h5>
+<table>
+  <tbody>
+    <tr><th>이름</th><td>박서준</td></tr>
+    <tr><th>나이</th><td>22세</td></tr>
+    <tr><th>직업</th><td>실용음악과 3학년 (작곡 전공)</td></tr>
+    <tr><th>음악 청취 맥락</th><td>작곡 전 영감 수집, 강의 후 감성 정리, 연습실 이동 중. 음악을 "듣는 것" 자체보다 "분석하고 흡수하는 것"으로 접근</td></tr>
+    <tr><th>페인 포인트</th><td>음악 추천 결과가 왜 이 곡인지 근거를 알 수 없음. 내 감정과 음악 특성 사이의 관계가 시각적으로 보이지 않아 작곡 레퍼런스로 활용하기 어려움</td></tr>
+    <tr><th>목표</th><td>지금 내 감성 상태가 음악의 어떤 좌표에 해당하는지 데이터로 확인하고, 누적 피드백으로 나만의 감성 지도를 만들고 싶음</td></tr>
+    <tr><th>관련 FR</th><td>FR1 (계정 관리), FR5 (2D 차트 시각화), FR6 (피드백·개인화)</td></tr>
+  </tbody>
+</table>
+
+<h5>설정 프롬프트</h5>
+<p>당신은 박서준, 22세 실용음악과 작곡 전공 학생. 평소 음악을 감상보다 분석의 대상으로 보는 편. valence·energy 같은 오디오 특성 개념에 익숙함. 스포티파이 프리미엄 사용자이며 플레이리스트를 직접 만들어 관리함. 본인 감정이 음악에 어떻게 투영되는지 궁금해함. MBTI는 INFJ로 내면 세계 탐색을 즐김.</p>
+
+<h5>인터뷰 대화 로그</h5>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 안녕하세요. 음악을 어떤 상황에서 주로 들으세요?</div>
+<div class="dialogue"><span class="speaker persona">[박서준]</span> 작곡하기 전에 제 감성을 세팅하려고 많이 들어요. 오늘 뭔가 몽환적인 걸 써야겠다 싶으면 그런 느낌의 레퍼런스 곡들 쭉 듣는 식으로요. 근데 매번 직접 찾으려니 시간이 너무 걸려요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 기존 추천 앱에서 가장 아쉬운 게 뭔가요?</div>
+<div class="dialogue"><span class="speaker persona">[박서준]</span> 추천 자체는 나쁘지 않은데, 왜 이 곡을 추천했는지를 모르겠어요. "비슷한 취향" 이런 말 말고 이 곡이 내 감정의 어떤 부분과 맞닿아 있는지가 알고 싶거든요. 작곡 공부하면서 valence-energy 같은 개념 배웠는데, 그게 시각적으로 보이면 진짜 좋겠다 싶어요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 추천 이력이나 내 감성 패턴을 돌아볼 수 있다면 어떨까요?</div>
+<div class="dialogue"><span class="speaker persona">[박서준]</span> 완전 쓸 것 같은데요. "나 요즘 항상 low valence 쪽에 치우쳐 있네" 이런 걸 알 수 있으면 창작에도 도움이 되고, 의도적으로 다른 감성 영역 탐색도 할 수 있잖아요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 계정 기능은요? 여러 기기에서 쓸 것 같으세요?</div>
+<div class="dialogue"><span class="speaker persona">[박서준]</span> 네, 연습실 PC랑 집 노트북 둘 다요. 제 피드백 히스토리가 동기화돼야 의미가 있을 것 같아요. 그냥 게스트로 쓰면 기록이 날아가니까요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 개인 데이터 저장에 대한 걱정은 없으세요?</div>
+<div class="dialogue"><span class="speaker persona">[박서준]</span> STT 텍스트가 남는 건 좀 신경 쓰여요. 사적인 말을 할 수도 있으니까. 동의 받고 저장하는 방식이면 괜찮을 것 같아요.</div>
+</div>
+
+<!-- 인터뷰 3: 이수민 -->
+<div class="appendix-log">
+<h4>A-3. 페르소나: 이수민 (34세, 독립 음악 큐레이터 / 관리자)</h4>
+
+<h5>페르소나 프로필</h5>
+<table>
+  <tbody>
+    <tr><th>이름</th><td>이수민</td></tr>
+    <tr><th>나이</th><td>34세</td></tr>
+    <tr><th>직업</th><td>독립 음악 큐레이터 (YouTube 감성 플레이리스트 채널 운영, 구독자 8만)</td></tr>
+    <tr><th>음악 청취 맥락</th><td>신규 플리 편성 작업 중, 청중 반응 모니터링 후 회의 시간. 음악을 콘텐츠로 다루며 감성별 카탈로그 품질 유지가 주 업무</td></tr>
+    <tr><th>페인 포인트</th><td>YouTube 플리에서 좋은 곡을 발견해도 Spotify 매칭·카탈로그 적재를 수동으로 해야 해서 시간이 많이 걸림. 어떤 곡이 어떤 감성과 잘 맞는지 피드백 데이터 없이 직감에만 의존</td></tr>
+    <tr><th>목표</th><td>YouTube 플리 → 카탈로그 자동 동기화 파이프라인 확보. 사용자 피드백 통계를 보며 큐레이션 품질을 데이터 기반으로 개선</td></tr>
+    <tr><th>관련 FR</th><td>FR7 (카탈로그 관리), FR6.5 (추천 이력), FR4.4 (캐싱), NFR2.2 (무중단 배포)</td></tr>
+  </tbody>
+</table>
+
+<h5>설정 프롬프트</h5>
+<p>당신은 이수민, 34세 독립 음악 큐레이터. YouTube에서 "새벽 감성", "드라이브 BGM" 등 감성별 플리 채널을 운영 중. Spotify for Artists도 사용하며 오디오 특성 데이터에 익숙함. 백엔드 개발 지식은 없지만 어드민 인터페이스는 잘 다룸. 카탈로그 품질이 떨어지면 추천 신뢰도가 무너진다는 걸 경험적으로 잘 알고 있음.</p>
+
+<h5>인터뷰 대화 로그</h5>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 안녕하세요. 평소 어떤 방식으로 플리를 관리하세요?</div>
+<div class="dialogue"><span class="speaker persona">[이수민]</span> YouTube에서 감성별로 플리를 만들어 놓고, 새로운 곡 발견하면 직접 추가해요. 근데 그게 Spotify에도 반영되려면 또 따로 검색해서 매칭해야 하니까 두 배로 일하는 느낌이에요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 자동화가 된다면 어떤 부분부터 원하세요?</div>
+<div class="dialogue"><span class="speaker persona">[이수민]</span> YouTube 플리 URL 넣으면 트랙 목록 뽑아서 Spotify에서 매칭하고 카탈로그에 올려주는 거요. 매칭 안 되는 건 따로 알림 줘서 제가 확인하고요. 주기적으로 새 곡 업데이트도 자동으로 됐으면 해요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 카탈로그 품질은 어떻게 확인하세요?</div>
+<div class="dialogue"><span class="speaker persona">[이수민]</span> 지금은 구독자 댓글이나 "싫어요" 비율 보는 게 전부예요. 근데 사용자가 이 시스템으로 추천 받고 어떤 곡에 좋아요·싫어요를 눌렀는지 데이터가 있으면 훨씬 객관적으로 볼 수 있겠죠. "이 곡 계속 싫어요 받네, 이번 플리에서 빼야겠다" 이런 식으로요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 시스템 업데이트 중 서비스가 끊기는 건 어떻게 생각하세요?</div>
+<div class="dialogue"><span class="speaker persona">[이수민]</span> 요즘 24시간 들어오는 청중이 있어서요, 업데이트 공지 없이 갑자기 다운되면 민망하죠. 무중단으로 배포할 수 있는 구조면 좋겠어요.</div>
+
+<div class="dialogue"><span class="speaker">[인터뷰어]</span> 라이선스나 지역 가용성 필터링도 필요하시겠네요?</div>
+<div class="dialogue"><span class="speaker persona">[이수민]</span> 당연하죠. 한국에서 재생 안 되는 곡을 추천 풀에 넣으면 의미가 없잖아요. 그 부분도 자동 필터링이 됐으면 해요.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 부록 B ===== -->
+<h1 id="appB">부록 B. 명확화 기록 (C-0001)</h1>
+
+<h3>C-0001 — "AI 시뮬레이션 로그"의 정의</h3>
+<table>
+  <tbody>
+    <tr><th style="width:25%">일자</th><td>2026-05-12</td></tr>
+    <tr><th>출처</th><td>TA/교수 답변</td></tr>
+    <tr><th>관련 이슈</th><td>#8</td></tr>
+  </tbody>
+</table>
+
+<h4>질문</h4>
+<p>SE 기말 프로젝트 1단계 산출물 중 "AI 시뮬레이션 로그"가 의미하는 것이 다음 두 해석 중 무엇인가?</p>
+<ul>
+  <li><strong>(a)</strong> AI에 페르소나 부여 후 인터뷰 시뮬레이션 (대화 로그)</li>
+  <li><strong>(b)</strong> AI를 사용자 대리로 두고 시스템 테스트 (입출력 로그)</li>
+</ul>
+
+<h4>결정</h4>
+<div class="highlight-box">
+  <strong>(a) AI에 페르소나 부여 후 인터뷰 시뮬레이션 (대화 로그)</strong>으로 확정.
+</div>
+
+<h4>영향</h4>
+<ul>
+  <li>이슈 #6 (페르소나)과 이슈 #7 (AI 인터뷰 로그)의 작업 방향이 확정됨.</li>
+  <li>현재 구조 <code>docs/ai-interviews/persona-*.md</code> (페르소나 프로필 + 설정 프롬프트 + 인터뷰 대화 로그가 한 파일에 통합)가 본 결정과 일치 — 그대로 유지.</li>
+  <li>이슈 #7의 잔여 작업은 <code>docs/interview-mapping.md</code> (인터뷰에서 도출된 니즈 → FR/NFR 매핑 표) 작성으로 좁혀짐.</li>
+  <li>(b) 해석은 시스템이 어느 정도 동작한 이후의 평가 단계에서나 의미가 있어 1단계 산출물 범위 밖.</li>
+</ul>
+
+</body>
+</html>

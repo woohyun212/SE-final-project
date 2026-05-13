@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>설계 문서 v1 — AI 기반 감정 분석 음악 추천 시스템</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    @page { size: A4; margin: 2cm; }
+    body {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+      line-height: 1.6;
+      color: #212121;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 0 2em;
+    }
+    h1, h2, h3 { color: #0D47A1; }
+    h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.3em; }
+    h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.2em; margin-top: 2em; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #E0E0E0; padding: 0.5em 0.7em; text-align: left; }
+    th { background: #E3F2FD; }
+    code {
+      background: #F5F5F5;
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.9em;
+    }
+    figure { margin: 1.5em 0; text-align: center; }
+    figcaption { font-size: 0.9em; color: #616161; margin-top: 0.5em; }
+    .mermaid {
+      background: #FAFAFA;
+      padding: 1em;
+      border-radius: 4px;
+      text-align: center;
+    }
+    @media print {
+      body { max-width: none; }
+      .mermaid { page-break-inside: avoid; }
+      table { page-break-inside: avoid; }
+    }
+    .cover {
+      text-align: center;
+      padding: 4em 0;
+      page-break-after: always;
+    }
+    .cover h1 { border: none; font-size: 2.5em; }
+    .cover .subtitle { font-size: 1.3em; color: #1976D2; margin: 0.5em 0 2em; }
+    .cover .meta-table { display: inline-block; text-align: left; margin-top: 2em; }
+    .cover .meta-table td { border: none; padding: 0.3em 1em; }
+    .cover .meta-table td:first-child { font-weight: 600; color: #424242; }
+    .toc { page-break-after: always; }
+    .toc ol { font-size: 1.05em; line-height: 2; }
+    .toc ol li a { color: #1976D2; text-decoration: none; }
+    .revision-table th { background: #E3F2FD; }
+    .note {
+      background: #FFF8E1;
+      border-left: 4px solid #FFC107;
+      padding: 0.6em 1em;
+      margin: 1em 0;
+      font-size: 0.95em;
+      color: #5D4037;
+    }
+    .section-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+<!-- ===================== 표지 ===================== -->
+<div class="cover">
+  <h1>AI 기반 감정 분석 음악 추천 시스템</h1>
+  <p class="subtitle">시스템 설계 문서 v1</p>
+  <table class="meta-table">
+    <tbody>
+      <tr><td>작성일</td><td>2026-05-13</td></tr>
+      <tr><td>버전</td><td>v1.0</td></tr>
+      <tr><td>작성자</td><td>CWNU CE 박우현, 신성민, 정원준</td></tr>
+      <tr><td>강의명</td><td>소프트웨어공학 (2026년 1학기)</td></tr>
+      <tr><td>단계</td><td>W12 1단계 제출 — 설계 통합 문서</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===================== 개정 이력 ===================== -->
+<h2 id="revision">개정 이력</h2>
+<table class="revision-table">
+  <thead>
+    <tr><th>버전</th><th>일자</th><th>작성자</th><th>변경 사항</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>v1.0</td><td>2026-05-13</td><td>박우현, 신성민, 정원준</td><td>최초 작성 — 아키텍처 4+1 뷰 초안, 클래스·시퀀스 다이어그램 신규, 컴포넌트 사전, 데이터 모델, API 초안, ADR 색인, NFR 전략 포함</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 목차 ===================== -->
+<div class="toc">
+  <h2 id="toc">목차</h2>
+  <ol>
+    <li><a href="#architecture">아키텍처 개요 (4+1 뷰 초안)</a></li>
+    <li><a href="#context">시스템 컨텍스트</a></li>
+    <li><a href="#components">컴포넌트 사전 (도메인 어휘)</a></li>
+    <li><a href="#class-diagram">클래스 다이어그램</a></li>
+    <li><a href="#sequence-diagram">시퀀스 다이어그램 (UC-03)</a></li>
+    <li><a href="#tech-stack">기술 스택</a></li>
+    <li><a href="#data-model">데이터 모델</a></li>
+    <li><a href="#api">API 엔드포인트 초안</a></li>
+    <li><a href="#adr">의사결정 색인 (ADR)</a></li>
+    <li><a href="#nfr">비기능 요구사항 충족 전략</a></li>
+  </ol>
+</div>
+
+<!-- ===================== 1. 아키텍처 개요 ===================== -->
+<h2 id="architecture">1. 아키텍처 개요 (4+1 뷰 초안)</h2>
+
+<h3>1.1 Logical View (논리 뷰)</h3>
+<p>
+  시스템은 크게 <strong>클라이언트</strong>, <strong>백엔드</strong>, <strong>ML 서버</strong>,
+  <strong>외부 서비스</strong>, <strong>데이터베이스</strong> 다섯 계층으로 구성된다.
+  클라이언트의 <code>VoiceCapture</code>는 음성을 수집하여 백엔드로 전송하고,
+  <code>RecommendationVisualizer</code>는 추천 결과를 2D 차트와 리스트로 렌더링한다.
+  백엔드는 <code>STTService</code>, <code>ContextAnalyzer</code>, <code>EmotionFusion</code>,
+  <code>RecommendationEngine</code>, <code>FeedbackLogger</code>로 이루어지며,
+  <code>EmotionClassifier</code>(wav2vec2)는 별도 ML 서버에서 동작한다.
+  도메인 엔티티(User, Music, Recommendation, Feedback)는 PostgreSQL에 영속화된다.
+</p>
+
+<h3>1.2 Process View (프로세스 뷰)</h3>
+<p>
+  UC-03의 핵심 흐름은 <strong>듀얼 트랙 병렬 처리</strong>다.
+  음성 수신 후 백엔드는 asyncio를 이용해 <em>(a)</em> ML 서버 감정 분류와
+  <em>(b)</em> STT→LLM 맥락 분석을 동시에 실행한다.
+  두 결과가 모두 준비되면 <code>EmotionFusion</code>이 통합 쿼리를 생성하고,
+  <code>RecommendationEngine</code>이 카탈로그 유사도 매칭을 수행한다.
+  전체 응답 목표는 P95 ≤ 3초 (NFR1.1)이며, Redis 캐시로 동일 입력 재요청 시 단축된다.
+</p>
+
+<h3>1.3 Development View (개발 뷰)</h3>
+<p>
+  코드베이스는 <code>/client</code>(Electron + Next.js, TypeScript),
+  <code>/backend</code>(FastAPI, Python), <code>/ml</code>(wav2vec2 학습·서빙, Python),
+  <code>/infra</code>(Docker Compose, Blue-Green 구성) 네 모듈로 분리된다.
+  CI/CD는 GitHub Actions에서 lint(ESLint, Ruff) + 단위 테스트를 자동 실행하며,
+  PR 머지 시에만 배포 파이프라인이 기동된다.
+  STT는 <code>STTService</code> 인터페이스와 <code>WhisperLocalAdapter</code> /
+  <code>WhisperApiAdapter</code> 두 구현체로 어댑터 패턴을 적용해 교체 용이성을 확보한다.
+</p>
+
+<h3>1.4 Deployment View (배포 뷰)</h3>
+<p>
+  백엔드와 ML 서버는 자체 서버에서 Docker 컨테이너로 운영된다.
+  Blue-Green 배포 방식을 채택해 새 버전을 Green 컨테이너에 배포하고
+  nginx가 트래픽을 전환함으로써 다운타임 0초를 보장한다 (NFR2.2).
+  Electron 클라이언트는 <code>electron-builder</code>로 빌드된 배포본을 사용자가
+  로컬에 설치하며, 서버 접근은 tailscale 메시 VPN을 통해 이루어진다.
+</p>
+
+<h3>1.5 Use Case View (유스케이스 뷰)</h3>
+<p>
+  핵심 유스케이스는 <strong>UC-03 음성으로 음악 추천 받기</strong>다.
+  사용자 액터가 음성을 입력하면 시스템의 모든 서브시스템이 협력하여
+  추천 결과를 반환한다. 관련 UC는 UC-01(회원가입), UC-02(로그인),
+  UC-04(재생), UC-05(피드백), UC-08(카탈로그 관리, 관리자 액터)이며,
+  UC-03이 모든 설계 결정의 기준점이 된다.
+</p>
+
+<h3>아키텍처 다이어그램</h3>
+<figure>
+  <pre class="mermaid">
+flowchart TB
+  User["사용자(Actor)"]
+
+  subgraph Client["클라이언트 (Electron + Next.js)"]
+    VC["VoiceCapture"]
+    RV["RecommendationVisualizer"]
+  end
+
+  subgraph Backend["백엔드 (FastAPI)"]
+    STT["STTService\n(WhisperLocalAdapter /\nWhisperApiAdapter)"]
+    CA["ContextAnalyzer\n(LLM 호출)"]
+    EF["EmotionFusion"]
+    RE["RecommendationEngine"]
+    FL["FeedbackLogger"]
+    CS["CatalogSynchronizer"]
+  end
+
+  subgraph MLServer["ML 서버"]
+    EC["EmotionClassifier\n(wav2vec2)"]
+  end
+
+  subgraph External["외부 서비스"]
+    Spotify["Spotify Web API"]
+    LLM["LLM API\n(Gemini)"]
+    YouTube["YouTube Data API"]
+  end
+
+  subgraph DB["데이터베이스 (PostgreSQL)"]
+    MC["MusicCatalog"]
+    FB["FeedbackLogger\n영속화"]
+  end
+
+  User -->|"음성 녹음"| VC
+  VC -->|"오디오 전송 (TLS)"| STT
+  VC -->|"오디오 전송 (TLS)"| EC
+  STT -->|"텍스트"| CA
+  CA -->|"맥락 표현"| EF
+  EC -->|"감정 벡터"| EF
+  EF -->|"FusedQuery"| RE
+  RE -->|"추천 결과"| RV
+  RV -->|"렌더링"| User
+  CA -->|"프롬프트"| LLM
+  LLM -->|"맥락/추천이유"| CA
+  RE -->|"audio features 조회"| Spotify
+  Spotify -->|"트랙 메타"| RE
+  RE -->|"검색"| MC
+  MC -->|"곡 풀"| RE
+  FL -->|"이벤트 저장"| FB
+  CS -->|"플리 요청"| YouTube
+  YouTube -->|"트랙 메타"| CS
+  CS -->|"카탈로그 적재"| MC
+  </pre>
+  <figcaption>그림 1. 시스템 아키텍처 다이어그램 — 컴포넌트 및 데이터 흐름</figcaption>
+</figure>
+
+<!-- ===================== 2. 시스템 컨텍스트 ===================== -->
+<h2 id="context">2. 시스템 컨텍스트</h2>
+
+<figure>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif" style="max-width:100%;height:auto;">
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#212121">
+    시스템 컨텍스트 다이어그램 — AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#424242"/>
+    </marker>
+  </defs>
+
+  <!-- 시스템 박스 (중앙) -->
+  <rect x="280" y="170" width="340" height="240" rx="12" ry="12"
+        fill="#E3F2FD" stroke="#1976D2" stroke-width="2.5"/>
+  <text x="450" y="200" text-anchor="middle" font-size="15" font-weight="700" fill="#0D47A1">
+    AI 감정분석 음악추천 시스템
+  </text>
+  <text x="450" y="218" text-anchor="middle" font-size="11" fill="#1565C0" font-style="italic">
+    (Electron Client + Backend API + ML Server)
+  </text>
+
+  <!-- 시스템 내부 컴포넌트 그룹 (요약) -->
+  <rect x="300" y="240" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="370" y="262" text-anchor="middle" font-size="11" fill="#0D47A1">EmotionClassifier + STT</text>
+
+  <rect x="460" y="240" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="530" y="262" text-anchor="middle" font-size="11" fill="#0D47A1">ContextAnalyzer (LLM)</text>
+
+  <rect x="300" y="285" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="370" y="307" text-anchor="middle" font-size="11" fill="#0D47A1">EmotionFusion</text>
+
+  <rect x="460" y="285" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="530" y="307" text-anchor="middle" font-size="11" fill="#0D47A1">RecommendationEngine</text>
+
+  <rect x="300" y="330" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="370" y="352" text-anchor="middle" font-size="11" fill="#0D47A1">MusicCatalog (DB)</text>
+
+  <rect x="460" y="330" width="140" height="34" rx="4" fill="#FFFFFF" stroke="#1976D2" stroke-width="1"/>
+  <text x="530" y="352" text-anchor="middle" font-size="11" fill="#0D47A1">FeedbackLogger</text>
+
+  <text x="450" y="395" text-anchor="middle" font-size="10" fill="#616161" font-style="italic">
+    (내부 컴포넌트는 참고용 — 상세는 아키텍처/클래스 다이어그램 참조)
+  </text>
+
+  <!-- 사용자 액터 (왼쪽) -->
+  <g transform="translate(100, 230)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="14" x2="0" y2="50" stroke="#212121" stroke-width="2"/>
+    <line x1="-18" y1="25" x2="18" y2="25" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="-15" y2="75" stroke="#212121" stroke-width="2"/>
+    <line x1="0" y1="50" x2="15" y2="75" stroke="#212121" stroke-width="2"/>
+    <text x="0" y="98" text-anchor="middle" font-size="13" font-weight="600" fill="#212121">사용자</text>
+  </g>
+
+  <!-- 외부 시스템: Spotify (우상) -->
+  <g transform="translate(740, 100)">
+    <rect x="0" y="0" width="140" height="60" rx="6" fill="#F1F8E9" stroke="#33691E" stroke-width="2"/>
+    <text x="70" y="22" text-anchor="middle" font-size="11" font-style="italic" fill="#558B2F">«external»</text>
+    <text x="70" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#33691E">Spotify Web API</text>
+  </g>
+
+  <!-- 외부 시스템: LLM (우중) -->
+  <g transform="translate(740, 260)">
+    <rect x="0" y="0" width="140" height="60" rx="6" fill="#FFF3E0" stroke="#E65100" stroke-width="2"/>
+    <text x="70" y="22" text-anchor="middle" font-size="11" font-style="italic" fill="#EF6C00">«external»</text>
+    <text x="70" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#E65100">LLM API</text>
+  </g>
+
+  <!-- 외부 시스템: YouTube (우하) -->
+  <g transform="translate(740, 420)">
+    <rect x="0" y="0" width="140" height="60" rx="6" fill="#FFEBEE" stroke="#B71C1C" stroke-width="2"/>
+    <text x="70" y="22" text-anchor="middle" font-size="11" font-style="italic" fill="#C62828">«external»</text>
+    <text x="70" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#B71C1C">YouTube Data API</text>
+  </g>
+
+  <!-- 화살표: 사용자 ↔ 시스템 -->
+  <line x1="125" y1="245" x2="280" y2="245" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="155" y="227" width="100" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="205" y="239" text-anchor="middle" font-size="11" fill="#212121">음성, 피드백</text>
+
+  <line x1="280" y1="285" x2="125" y2="285" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="145" y="290" width="120" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="205" y="302" text-anchor="middle" font-size="11" fill="#212121">추천 + 시각화</text>
+
+  <!-- 화살표: 시스템 ↔ Spotify -->
+  <line x1="620" y1="210" x2="740" y2="135" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="615" y="160" width="135" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="682" y="172" text-anchor="middle" font-size="11" fill="#212121">트랙/audio features 조회</text>
+
+  <line x1="740" y1="155" x2="620" y2="240" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="615" y="195" width="135" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="682" y="207" text-anchor="middle" font-size="11" fill="#212121">JSON (메타 + features)</text>
+
+  <!-- 화살표: 시스템 ↔ LLM -->
+  <line x1="620" y1="275" x2="740" y2="285" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="623" y="258" width="125" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="685" y="270" text-anchor="middle" font-size="11" fill="#212121">STT텍스트 + 프롬프트</text>
+
+  <line x1="740" y1="305" x2="620" y2="320" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="623" y="325" width="125" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="685" y="337" text-anchor="middle" font-size="11" fill="#212121">맥락 + 추천 이유</text>
+
+  <!-- 화살표: 시스템 ↔ YouTube -->
+  <line x1="620" y1="370" x2="740" y2="430" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="615" y="395" width="135" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="682" y="407" text-anchor="middle" font-size="11" fill="#212121">감성 플리 ID 요청</text>
+
+  <line x1="740" y1="450" x2="620" y2="395" stroke="#424242" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="615" y="438" width="135" height="16" fill="#FFFFFF" opacity="0.95"/>
+  <text x="682" y="450" text-anchor="middle" font-size="11" fill="#212121">플리 내 트랙 메타</text>
+
+  <!-- Note -->
+  <g transform="translate(40, 480)">
+    <rect x="0" y="0" width="380" height="60" rx="4" fill="#FFFDE7" stroke="#F9A825" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="10" y="20" font-size="11" font-weight="700" fill="#F57F17">주의: 캐글 dataset은 시스템 컨텍스트에 포함되지 않음</text>
+    <text x="10" y="36" font-size="10" fill="#5D4037">학습(개발) 시점에만 사용 → 운영 시 EmotionClassifier</text>
+    <text x="10" y="50" font-size="10" fill="#5D4037">모델 가중치로 흡수됨. 외부 시스템 아님.</text>
+  </g>
+  </svg>
+  <figcaption>그림 2. 시스템 컨텍스트 다이어그램 (SRS §3 기반)</figcaption>
+</figure>
+
+<h3>2.1 외부 인터페이스 요약</h3>
+<table>
+  <thead>
+    <tr><th>인터페이스</th><th>방향</th><th>데이터</th><th>빈도</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>사용자 → 시스템</td><td>inbound</td><td>음성 (WAV/WebM), 피드백 (좋아요/싫어요)</td><td>요청당</td></tr>
+    <tr><td>시스템 → 사용자</td><td>outbound</td><td>추천 곡 리스트, 2D 차트, LLM 설명 텍스트</td><td>요청당</td></tr>
+    <tr><td>시스템 → Spotify Web API</td><td>outbound</td><td>트랙 검색, audio features 조회 요청</td><td>추천당 1–10회</td></tr>
+    <tr><td>Spotify Web API → 시스템</td><td>inbound</td><td>JSON (트랙 메타 + audio features)</td><td>위에 대응</td></tr>
+    <tr><td>시스템 → LLM API</td><td>outbound</td><td>STT 텍스트 + 분석 프롬프트</td><td>추천당 1–2회</td></tr>
+    <tr><td>LLM API → 시스템</td><td>inbound</td><td>맥락 표현 + 추천 이유 텍스트</td><td>위에 대응</td></tr>
+    <tr><td>시스템 → YouTube Data API</td><td>outbound</td><td>감성 플리 ID, 트랙 메타 요청</td><td>카탈로그 동기화 시</td></tr>
+    <tr><td>YouTube Data API → 시스템</td><td>inbound</td><td>플리 내 트랙 메타</td><td>위에 대응</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 3. 컴포넌트 사전 ===================== -->
+<h2 id="components">3. 컴포넌트 사전 (도메인 어휘)</h2>
+<p>
+  후속 다이어그램(클래스, 시퀀스, 아키텍처)에서 일관되게 사용하는 명칭이다.
+  SRS §7 컴포넌트 사전을 기준으로 한다.
+</p>
+<table>
+  <thead>
+    <tr><th>컴포넌트</th><th>위치</th><th>책임</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>VoiceCapture</code></td><td>Client (Electron)</td><td>MediaRecorder로 음성 녹음 및 TLS 전송</td></tr>
+    <tr><td><code>EmotionClassifier</code></td><td>ML Server</td><td>캐글 학습 wav2vec2 모델, 음성 → 감정 벡터</td></tr>
+    <tr><td><code>STTService</code></td><td>Backend</td><td>음성 → 텍스트 변환 (어댑터 패턴: WhisperLocalAdapter / WhisperApiAdapter)</td></tr>
+    <tr><td><code>ContextAnalyzer</code></td><td>Backend (LLM API 호출)</td><td>텍스트 → 맥락 표현 추출 (Gemini LLM)</td></tr>
+    <tr><td><code>EmotionFusion</code></td><td>Backend</td><td>감정 벡터 + 맥락 표현 → 통합 쿼리 생성</td></tr>
+    <tr><td><code>RecommendationEngine</code></td><td>Backend</td><td>Spotify audio features 기반 유사도 매칭, 상위 K=10 선정</td></tr>
+    <tr><td><code>MusicCatalog</code></td><td>Backend (DB)</td><td>Spotify + YouTube 시드로 구축된 곡 풀, 검색 및 적재</td></tr>
+    <tr><td><code>FeedbackLogger</code></td><td>Backend</td><td>좋아요/싫어요/재생 이벤트 기록 및 집계</td></tr>
+    <tr><td><code>RecommendationVisualizer</code></td><td>Client (Electron)</td><td>2D 감정-음악 매핑 차트 + LLM 이유 설명 렌더링</td></tr>
+    <tr><td><code>CatalogSynchronizer</code></td><td>Backend (Scheduler)</td><td>YouTube 플리 → Spotify 매칭 → 카탈로그 적재 (주기적 실행)</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 4. 클래스 다이어그램 ===================== -->
+<h2 id="class-diagram">4. 클래스 다이어그램</h2>
+<p>
+  SRS §7의 10개 컴포넌트와 핵심 도메인 엔티티를 UML 클래스 다이어그램으로 표현한다.
+  <code>STTService</code>는 어댑터 패턴으로 설계되어 <code>WhisperLocalAdapter</code>와
+  <code>WhisperApiAdapter</code> 두 구현체가 인터페이스를 구현한다 (ADR-0002).
+</p>
+<figure>
+  <pre class="mermaid">
+classDiagram
+  direction TB
+
+  class VoiceCapture {
+    -mediaRecorder: MediaRecorder
+    -maxDuration: int
+    +record() void
+    +stop() Blob
+    +send(audio: Blob) void
+  }
+
+  class EmotionClassifier {
+    -model: wav2vec2Model
+    +predict(audio: bytes) EmotionVector
+  }
+
+  class STTService {
+    <<interface>>
+    +transcribe(audio: bytes) string
+  }
+
+  class WhisperLocalAdapter {
+    -modelPath: string
+    +transcribe(audio: bytes) string
+  }
+
+  class WhisperApiAdapter {
+    -apiKey: string
+    -endpoint: string
+    +transcribe(audio: bytes) string
+  }
+
+  class ContextAnalyzer {
+    -llmClient: GeminiClient
+    +analyze(text: string) ContextRepresentation
+  }
+
+  class EmotionFusion {
+    +fuse(emotion: EmotionVector, context: ContextRepresentation) FusedQuery
+  }
+
+  class RecommendationEngine {
+    -catalog: MusicCatalog
+    +recommend(query: FusedQuery) Recommendation[]
+    -computeSimilarity(query: FusedQuery, music: Music) float
+  }
+
+  class MusicCatalog {
+    -db: PostgreSQLClient
+    +search(features: dict) Music[]
+    +insert(track: Music) void
+  }
+
+  class FeedbackLogger {
+    -db: PostgreSQLClient
+    +log(event: Feedback) void
+    +aggregate(userId: string) Profile
+  }
+
+  class RecommendationVisualizer {
+    +renderChart(recommendations: Recommendation[]) void
+    +renderList(recommendations: Recommendation[]) void
+  }
+
+  class CatalogSynchronizer {
+    -youtubeClient: YouTubeClient
+    -spotifyClient: SpotifyClient
+    +syncFromYouTube() void
+  }
+
+  class User {
+    +userId: string
+    +email: string
+    +passwordHash: string
+    +createdAt: datetime
+  }
+
+  class Profile {
+    +profileId: string
+    +userId: string
+    +preferredGenres: string[]
+    +feedbackHistory: Feedback[]
+  }
+
+  class EmotionVector {
+    +valence: float
+    +arousal: float
+    +dominance: float
+    +rawFeatures: float[]
+  }
+
+  class ContextRepresentation {
+    +keywords: string[]
+    +mood: string
+    +situation: string
+    +rawText: string
+  }
+
+  class Music {
+    +trackId: string
+    +title: string
+    +artist: string
+    +albumArt: string
+    +spotifyFeatures: dict
+  }
+
+  class Recommendation {
+    +recommendationId: string
+    +music: Music
+    +score: float
+    +reason: string
+    +createdAt: datetime
+  }
+
+  class Feedback {
+    +feedbackId: string
+    +userId: string
+    +trackId: string
+    +type: string
+    +timestamp: datetime
+  }
+
+  STTService <|.. WhisperLocalAdapter : implements
+  STTService <|.. WhisperApiAdapter : implements
+
+  VoiceCapture --> EmotionClassifier : "오디오 전송"
+  VoiceCapture --> STTService : "오디오 전송"
+  STTService --> ContextAnalyzer : "텍스트"
+  EmotionClassifier --> EmotionVector : "생성"
+  ContextAnalyzer --> ContextRepresentation : "생성"
+  ContextAnalyzer ..> EmotionVector : "uses"
+  EmotionFusion --> EmotionVector : "uses"
+  EmotionFusion --> ContextRepresentation : "uses"
+  RecommendationEngine --> MusicCatalog : "검색"
+  RecommendationEngine --> Recommendation : "생성"
+  Recommendation *-- Music : "composition"
+  FeedbackLogger --> Feedback : "저장"
+  FeedbackLogger --> Profile : "집계"
+  RecommendationVisualizer --> Recommendation : "렌더링"
+  User "1" --o "1" Profile : "has"
+  Profile "1" --o "*" Feedback : "aggregates"
+  CatalogSynchronizer --> MusicCatalog : "적재"
+  </pre>
+  <figcaption>그림 3. 클래스 다이어그램 — 10개 컴포넌트 + 도메인 엔티티 (신규 작성)</figcaption>
+</figure>
+
+<!-- ===================== 5. 시퀀스 다이어그램 ===================== -->
+<h2 id="sequence-diagram">5. 시퀀스 다이어그램 (UC-03 음성으로 음악 추천 받기)</h2>
+<p>
+  SRS §6.2 UC-03의 주 시나리오 11단계를 시퀀스 다이어그램으로 표현한다.
+  6단계의 듀얼 트랙 병렬 처리는 <code>par</code> 프레임으로 나타내고,
+  LLM·ML 장애 대체 시나리오는 <code>alt</code> 프레임으로 표현한다.
+</p>
+<figure>
+  <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor User as 사용자
+  participant VC as VoiceCapture
+  participant BE as Backend
+  participant EC as EmotionClassifier
+  participant STT as STTService
+  participant CA as ContextAnalyzer
+  participant LLM as LLM API
+  participant EF as EmotionFusion
+  participant RE as RecommendationEngine
+  participant Spotify as Spotify API
+  participant MC as MusicCatalog
+  participant RV as RecommendationVisualizer
+
+  User->>VC: "녹음 시작" 버튼 클릭
+  VC->>VC: 마이크 활성화, 파형 피드백 표시
+  User->>VC: 현재 상태 음성 발화
+  User->>VC: "녹음 종료" 클릭 (또는 60초 경과)
+  VC->>BE: POST /recommend (audio, TLS)
+
+  par 감정 벡터 추출 (트랙 a)
+    BE->>EC: predict(audio)
+    alt ML 정상
+      EC-->>BE: EmotionVector
+    else ML 장애 (NFR2.4 fallback)
+      EC-->>BE: 오류 응답
+      BE->>BE: EmotionVector = null (텍스트 전용 모드)
+    end
+  and 맥락 표현 추출 (트랙 b)
+    BE->>STT: transcribe(audio)
+    STT-->>BE: text
+    BE->>CA: analyze(text)
+    alt LLM 정상
+      CA->>LLM: 맥락 분석 프롬프트
+      LLM-->>CA: 맥락 표현 JSON
+      CA-->>BE: ContextRepresentation
+    else LLM 장애 (NFR2.3 fallback)
+      CA->>CA: 룰베이스 키워드 추출
+      CA-->>BE: ContextRepresentation (기본값)
+    end
+  end
+
+  BE->>EF: fuse(EmotionVector, ContextRepresentation)
+  EF-->>BE: FusedQuery
+
+  BE->>RE: recommend(FusedQuery)
+  RE->>MC: search(features)
+  MC-->>RE: Music[]
+  RE->>Spotify: audio features 조회
+  Spotify-->>RE: JSON (features)
+  RE-->>BE: Recommendation[10]
+
+  BE->>LLM: 각 추천 곡 이유 생성 프롬프트
+  LLM-->>BE: 추천 이유 텍스트[]
+
+  BE-->>VC: 추천 결과 응답 (≤ 3초, NFR1.1)
+  VC->>RV: 추천 데이터 전달
+  RV->>User: 2D 매핑 차트 + 곡 리스트 + 추천 이유 렌더링
+  </pre>
+  <figcaption>그림 4. UC-03 시퀀스 다이어그램 — par 듀얼 트랙 + alt fallback 분기 (신규 작성)</figcaption>
+</figure>
+
+<!-- ===================== 6. 기술 스택 ===================== -->
+<h2 id="tech-stack">6. 기술 스택</h2>
+<p>ADR-0002에서 확정된 8개 영역의 기술 결정과 근거를 정리한다.</p>
+<table>
+  <thead>
+    <tr><th>영역</th><th>채택 기술</th><th>대안 (탈락)</th><th>근거 (한 줄)</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>LLM</td>
+      <td><code>gemini-3.1-flash-lite-preview</code></td>
+      <td>GPT-4o, Claude Haiku, 로컬 Llama</td>
+      <td>저비용 + 빠른 응답 + 한국어 가용; 모델 ID는 환경변수로 분리해 preview → GA 전환 대응</td>
+    </tr>
+    <tr>
+      <td>STT</td>
+      <td>어댑터 패턴 + Whisper Small (로컬) / Whisper API</td>
+      <td>Clova, 단일 Whisper 백엔드</td>
+      <td><code>STTService</code> 인터페이스로 캡슐화, 운영 중 비용·지연 trade-off에 따라 교체 가능 (NFR2.3 fallback 동일 패턴)</td>
+    </tr>
+    <tr>
+      <td>음성 감정 ML</td>
+      <td>wav2vec2 (fine-tuning)</td>
+      <td>CNN+멜스펙트로그램, LSTM</td>
+      <td>사전학습 모델 품질 우수; 캐글 dataset fine-tuning 워크플로 친숙; 목표 정확도 ≥ 70% (NFR4.3)</td>
+    </tr>
+    <tr>
+      <td>백엔드</td>
+      <td>FastAPI (Python)</td>
+      <td>Express, Flask</td>
+      <td>비동기 IO + Pydantic + ML과 동일 Python 런타임 → 듀얼 트랙 asyncio 병렬 처리에 자연스러움</td>
+    </tr>
+    <tr>
+      <td>데이터베이스</td>
+      <td>PostgreSQL</td>
+      <td>MongoDB</td>
+      <td>관계형 안정성 + <code>JSONB</code>로 피드백·추천 이력 반정형 데이터 흡수</td>
+    </tr>
+    <tr>
+      <td>프론트엔드</td>
+      <td>Electron + Next.js</td>
+      <td>React 단독, Vue</td>
+      <td>ADR-0001 Electron 위에 Next.js 라우팅·컴포넌트 생태계 확정; 팀 JS/TS 역량 직접 활용</td>
+    </tr>
+    <tr>
+      <td>배포</td>
+      <td>자체 서버 (Blue-Green)</td>
+      <td>Heroku/Vercel, AWS/GCP</td>
+      <td>API/LLM 비용 통제 + 무중단 배포 직접 구성 (NFR2.2) + 시연 외부 종속 없음</td>
+    </tr>
+    <tr>
+      <td>네트워크</td>
+      <td>tailscale (메시 VPN)</td>
+      <td>nginx + Let's Encrypt, Cloudflare Tunnel</td>
+      <td>자체 서버 ↔ 개발자/CI 메시 VPN; SSH·Public IP 노출 최소화; 비상용 SSH 키 1개 별도 보존</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===================== 7. 데이터 모델 ===================== -->
+<h2 id="data-model">7. 데이터 모델</h2>
+<p>핵심 엔티티와 관계를 ER 다이어그램으로 표현한다. PK는 <code>PK</code>, FK는 <code>FK</code>로 표시한다.</p>
+<figure>
+  <pre class="mermaid">
+erDiagram
+  USER {
+    string userId PK
+    string email
+    string passwordHash
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  PROFILE {
+    string profileId PK
+    string userId FK
+    string[] preferredGenres
+    datetime updatedAt
+  }
+
+  EMOTION_VECTOR {
+    string vectorId PK
+    string recommendationId FK
+    float valence
+    float arousal
+    float dominance
+    json rawFeatures
+    datetime createdAt
+  }
+
+  MUSIC {
+    string trackId PK
+    string spotifyId
+    string title
+    string artist
+    string albumArt
+    json spotifyFeatures
+    datetime syncedAt
+  }
+
+  RECOMMENDATION {
+    string recommendationId PK
+    string userId FK
+    string trackId FK
+    float score
+    string reason
+    datetime createdAt
+  }
+
+  FEEDBACK {
+    string feedbackId PK
+    string userId FK
+    string trackId FK
+    string type
+    int playbackPct
+    datetime timestamp
+  }
+
+  USER ||--|| PROFILE : "has"
+  USER ||--o{ RECOMMENDATION : "receives"
+  USER ||--o{ FEEDBACK : "submits"
+  RECOMMENDATION ||--|| MUSIC : "refers to"
+  RECOMMENDATION ||--o| EMOTION_VECTOR : "has"
+  FEEDBACK }o--|| MUSIC : "about"
+  </pre>
+  <figcaption>그림 5. 데이터 모델 ER 다이어그램 — 핵심 6개 엔티티</figcaption>
+</figure>
+
+<h3>엔티티 설명</h3>
+<table>
+  <thead>
+    <tr><th>엔티티</th><th>설명</th><th>주요 컬럼</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>USER</code></td><td>시스템 사용자 계정</td><td>userId (PK), email, passwordHash (bcrypt)</td></tr>
+    <tr><td><code>PROFILE</code></td><td>사용자 선호 및 누적 특성</td><td>userId (FK), preferredGenres (배열)</td></tr>
+    <tr><td><code>EMOTION_VECTOR</code></td><td>분석된 감정 벡터 (추천당 1개, 원본 음성 미저장)</td><td>valence, arousal, dominance, rawFeatures (JSONB)</td></tr>
+    <tr><td><code>MUSIC</code></td><td>카탈로그 곡 메타데이터</td><td>spotifyId, spotifyFeatures (JSONB)</td></tr>
+    <tr><td><code>RECOMMENDATION</code></td><td>추천 이력 (사용자별 조회 가능)</td><td>userId (FK), trackId (FK), score, reason</td></tr>
+    <tr><td><code>FEEDBACK</code></td><td>좋아요/싫어요/재생 이벤트</td><td>type (like/dislike/playback), playbackPct</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 8. API 엔드포인트 초안 ===================== -->
+<h2 id="api">8. API 엔드포인트 초안</h2>
+<table>
+  <thead>
+    <tr><th>Method</th><th>Path</th><th>입력</th><th>출력</th><th>관련 컴포넌트</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>POST</td>
+      <td><code>/auth/signup</code></td>
+      <td>JSON: email, password</td>
+      <td>201 Created: userId, token</td>
+      <td>FR1.1</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/auth/login</code></td>
+      <td>JSON: email, password</td>
+      <td>200 OK: JWT token</td>
+      <td>FR1.2</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/auth/logout</code></td>
+      <td>Header: Authorization (Bearer)</td>
+      <td>204 No Content</td>
+      <td>FR1.2</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/recommend</code></td>
+      <td>multipart/form-data: audio (WAV/WebM, ≤ 60s)</td>
+      <td>200 OK: recommendations[] (track, score, reason, emotionVector)</td>
+      <td>VoiceCapture, EmotionClassifier, STTService, ContextAnalyzer, EmotionFusion, RecommendationEngine (FR2~FR5)</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/feedback/like</code></td>
+      <td>JSON: trackId, recommendationId</td>
+      <td>201 Created</td>
+      <td>FeedbackLogger (FR6.1)</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/feedback/dislike</code></td>
+      <td>JSON: trackId, recommendationId</td>
+      <td>201 Created</td>
+      <td>FeedbackLogger (FR6.1)</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/feedback/playback</code></td>
+      <td>JSON: trackId, event (start/end/complete), playbackPct</td>
+      <td>201 Created</td>
+      <td>FeedbackLogger (FR6.2)</td>
+    </tr>
+    <tr>
+      <td>GET</td>
+      <td><code>/history</code></td>
+      <td>Query: n=10 (최근 N개)</td>
+      <td>200 OK: recommendations[] with feedback</td>
+      <td>FeedbackLogger, RecommendationEngine (FR6.5)</td>
+    </tr>
+    <tr>
+      <td>POST</td>
+      <td><code>/admin/catalog/sync</code></td>
+      <td>JSON: playlistId (YouTube)</td>
+      <td>202 Accepted: jobId</td>
+      <td>CatalogSynchronizer, MusicCatalog (FR7)</td>
+    </tr>
+    <tr>
+      <td>GET</td>
+      <td><code>/health</code></td>
+      <td>없음</td>
+      <td>200 OK: {status, version, uptime}</td>
+      <td>전체 시스템 상태 확인 (NFR2.1)</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>인증:</strong> <code>/auth/signup</code>, <code>/auth/login</code>, <code>/health</code>를 제외한
+  모든 엔드포인트는 <code>Authorization: Bearer &lt;JWT&gt;</code> 헤더 필수.<br/>
+  <strong>보안:</strong> 모든 통신은 TLS 1.2+ 적용 (NFR3.1). 음성 원본은 분석 완료 후 서버에서 즉시 폐기 (NFR3.2).
+</div>
+
+<!-- ===================== 9. ADR 색인 ===================== -->
+<h2 id="adr">9. 의사결정 색인 (ADR)</h2>
+<table>
+  <thead>
+    <tr><th>ADR</th><th>상태</th><th>요약</th><th>파일</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ADR-0001</td>
+      <td>Accepted</td>
+      <td>크로스플랫폼 마이크 접근 및 팀 JS/TS 역량을 고려해 클라이언트 플랫폼으로 Electron을 채택; PWA·네이티브·Tauri·Flutter 대안 탈락</td>
+      <td><code>docs/회의록/decisions/0001-electron-as-client-platform.md</code></td>
+    </tr>
+    <tr>
+      <td>ADR-0002</td>
+      <td>Accepted</td>
+      <td>8개 기술 영역(LLM·STT·ML·백엔드·DB·프론트엔드·배포·네트워크) 일괄 확정; 비용 통제·Python 런타임 동질성·Blue-Green 배포 직접 구성이 핵심 동인</td>
+      <td><code>docs/회의록/decisions/0002-tech-stack.md</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===================== 10. NFR 충족 전략 ===================== -->
+<h2 id="nfr">10. 비기능 요구사항 충족 전략</h2>
+<table>
+  <thead>
+    <tr><th>NFR</th><th>요구 수준</th><th>충족 전략</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>NFR1 성능</strong></td>
+      <td>응답 P95 ≤ 3초, ML 추론 ≤ 1.5초</td>
+      <td>
+        <ul>
+          <li>듀얼 트랙(감정 분류 + STT→맥락 분석) asyncio 병렬 실행으로 직렬 대비 50% 이상 단축</li>
+          <li>동일 입력 추천 결과 Redis 캐싱 (TTL 1시간, FR4.4)</li>
+          <li>EmotionClassifier는 ML 전용 서버에서 GPU 서빙, 추론 시간 격리</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>NFR2 가용성</strong></td>
+      <td>API 가용성 ≥ 99%, 무중단 배포</td>
+      <td>
+        <ul>
+          <li>Blue-Green 배포: Green 컨테이너에 신 버전 준비 후 nginx 트래픽 전환 → 다운타임 0초</li>
+          <li>LLM 장애 시 룰베이스 키워드 추출 fallback (NFR2.3)</li>
+          <li>ML 장애 시 텍스트 기반 추천만으로 응답 지속 (NFR2.4)</li>
+          <li>Spotify API 장애 시 캐시된 카탈로그에서 매칭</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>NFR3 보안</strong></td>
+      <td>TLS 1.2+, 음성 즉시 폐기, bcrypt</td>
+      <td>
+        <ul>
+          <li>모든 API 통신 TLS 1.2+ 강제 (tailscale 메시 + nginx TLS termination)</li>
+          <li>음성 원본은 분석(EmotionClassifier + STT) 완료 즉시 서버 메모리에서 폐기; DB에 감정 벡터만 저장 (NFR3.2)</li>
+          <li>비밀번호 bcrypt(cost ≥ 12) 해싱 (NFR3.4)</li>
+          <li>API 키 전부 환경변수 관리, Electron contextIsolation: true + nodeIntegration: false 적용</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>NFR4 품질</strong></td>
+      <td>ML 정확도 ≥ 70%, 좋아요율 ≥ 50%, 커버리지 ≥ 70%</td>
+      <td>
+        <ul>
+          <li>wav2vec2 캐글 테스트셋 정확도 측정을 CI 파이프라인에 통합</li>
+          <li>피드백 누적 → Recommendation Engine 가중치 갱신으로 개인화 향상 (FR6.4)</li>
+          <li>Jest(클라이언트) + Pytest(백엔드/ML) 커버리지 리포트, PR 머지 조건으로 ≥ 70% 강제</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>NFR5 사용성</strong></td>
+      <td>첫 추천 ≤ 3 클릭, 색맹 대응 팔레트</td>
+      <td>
+        <ul>
+          <li>메인 화면에 "녹음 시작" 버튼 직접 노출 → 로그인 후 1클릭으로 녹음, 1클릭으로 종료, 자동 추천 → 3 클릭 이내</li>
+          <li>2D 감정-음악 차트에 Okabe-Ito 색맹 대응 팔레트 적용 (NFR5.2)</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>NFR6 이식성</strong></td>
+      <td>Windows 10+, macOS 12+, Ubuntu 22+</td>
+      <td>
+        <ul>
+          <li>Electron 단일 코드베이스 → electron-builder로 3-플랫폼 바이너리 자동 빌드</li>
+          <li>CI 매트릭스: Windows / macOS / Ubuntu 병렬 빌드 검증</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<hr style="margin-top: 3em;"/>
+<p style="font-size: 0.85em; color: #9E9E9E; text-align: center;">
+  AI 기반 감정 분석 음악 추천 시스템 — 시스템 설계 문서 v1.0 &nbsp;|&nbsp;
+  CWNU CE 박우현, 신성민, 정원준 &nbsp;|&nbsp; 2026-05-13
+</p>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+</script>
+</body>
+</html>
