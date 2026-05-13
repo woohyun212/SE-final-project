@@ -1,0 +1,30 @@
+{
+  "name": "se-final-project-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI 기반 감정 분석 음악 추천 시스템 — Electron + Next.js 클라이언트",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:next": "next dev",
+    "build:next": "next build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build": "npm run build:next && npm run build:electron",
+    "dev": "concurrently \"npm run dev:next\" \"wait-on http://localhost:3000 && npm run build:electron && cross-env NODE_ENV=development electron .\"",
+    "start": "npm run build && electron ."
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.2",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "concurrently": "8.2.2",
+    "cross-env": "7.0.3",
+    "electron": "31.2.1",
+    "typescript": "5.5.3",
+    "wait-on": "7.2.0"
+  }
+}
