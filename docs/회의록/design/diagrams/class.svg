@@ -88,9 +88,8 @@
   <rect x="30" y="230" width="200" height="100" rx="4" fill="#E8F5E9" stroke="#33691E" stroke-width="1.8"/>
   <line x1="30" y1="258" x2="230" y2="258" stroke="#33691E" stroke-width="1"/>
   <text x="130" y="249" text-anchor="middle" font-size="11" font-weight="700" fill="#1B5E20">RecommendationVisualizer</text>
-  <text x="38" y="274" font-size="10" fill="#2E7D32">+ renderChart(emotions: EmotionVector[],</text>
-  <text x="38" y="286" font-size="10" fill="#2E7D32">    tracks: Music[]): void</text>
-  <text x="38" y="300" font-size="10" fill="#2E7D32">+ renderList(recs: Recommendation[]): void</text>
+  <text x="38" y="278" font-size="10" fill="#2E7D32">+ renderChart(emos, tracks): void</text>
+  <text x="38" y="296" font-size="10" fill="#2E7D32">+ renderList(recs: Recommendation[])</text>
 
   <!-- ===== BACKEND CLASSES ===== -->
 
@@ -280,9 +279,8 @@
   <line x1="372" y1="185" x2="372" y2="215" stroke="#424242" stroke-width="1.5"
         stroke-dasharray="5,3" marker-end="url(#open-triangle)"/>
 
-  <!-- WhisperApiAdapter realization STTService -->
-  <!-- STTService y=185 to WhisperApiAdapter y=320: go down via bend -->
-  <polyline points="372,185 372,195 340,195 340,320"
+  <!-- WhisperApiAdapter realization STTService (우회로 - 박스 오른쪽으로 빠짐) -->
+  <polyline points="465,360 478,360 478,160 465,160"
             fill="none" stroke="#424242" stroke-width="1.5"
             stroke-dasharray="5,3" marker-end="url(#open-triangle)"/>
 
@@ -292,26 +290,19 @@
         fill="none" stroke="#424242" stroke-width="1.5"
         marker-start="url(#diamond-filled)"/>
 
-  <!-- Profile aggregation Feedback -->
-  <line x1="1230" y1="310" x2="1230" y2="330"
-        fill="none" stroke="#424242" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-  <text x="1240" y="322" font-size="9" fill="#424242">집계</text>
-
-  <!-- (jump over gap — Profile 310→ Feedback 900 via right side) -->
-  <polyline points="1370,263 1385,263 1385,948 1370,948"
+  <!-- Profile aggregation Feedback (우회로, Profile에 빈 다이아몬드) -->
+  <polyline points="1370,263 1378,263 1378,948 1370,948"
             fill="none" stroke="#424242" stroke-width="1.5"
             marker-start="url(#diamond-open)"/>
-  <text x="1388" y="610" font-size="9" fill="#424242" transform="rotate(90,1388,610)">aggregates *</text>
+  <text x="1383" y="610" font-size="9" fill="#424242" transform="rotate(90,1383,610)">aggregates *</text>
 
-  <!-- Recommendation composition Music -->
-  <line x1="1230" y1="880" x2="1230" y2="785"
-        fill="none" stroke="#424242" stroke-width="1.5"
+  <!-- Recommendation composition Music (Recommendation이 Music을 합성 소유 — 다이아몬드는 Recommendation에) -->
+  <line x1="1230" y1="765" x2="1230" y2="785"
+        stroke="#424242" stroke-width="1.5"
         marker-end="url(#diamond-filled)"/>
 
-  <!-- Music composition AudioFeatures -->
-  <!-- Music left(x=1090,y=712) → AudioFeatures right(x=465,y=648) -->
-  <polyline points="1090,712 1075,712 1075,648 465,648"
+  <!-- Music composition AudioFeatures (Music이 AudioFeatures를 소유 — 다이아몬드는 Music에) -->
+  <polyline points="465,648 1075,648 1075,712 1090,712"
             fill="none" stroke="#424242" stroke-width="1.5"
             marker-end="url(#diamond-filled)"/>
 
@@ -377,23 +368,23 @@
         marker-end="url(#arrow)"/>
   <text x="470" y="124" font-size="9" fill="#424242">텍스트</text>
 
-  <!-- EmotionClassifier --> EmotionVector -->
-  <!-- EC right(x=1050,y=140) → EmotionVector left(x=1090,y=377) -->
-  <polyline points="1050,140 1065,140 1065,377 1090,377"
+  <!-- EmotionClassifier --> EmotionVector (생성, 진입점 y=355로 분리) -->
+  <!-- EC right(x=1050,y=140) → EmotionVector left(x=1090,y=355) -->
+  <polyline points="1050,140 1065,140 1065,355 1090,355"
             fill="none" stroke="#424242" stroke-width="1.5"
             marker-end="url(#arrow)"/>
-  <text x="1055" y="260" font-size="9" fill="#424242" transform="rotate(90,1055,260)">생성</text>
+  <text x="1045" y="250" font-size="9" fill="#424242" transform="rotate(90,1055,250)">생성</text>
 
-  <!-- ContextAnalyzer --> ContextRepresentation -->
-  <polyline points="675,130 690,130 690,492 1090,492"
+  <!-- ContextAnalyzer --> ContextRepresentation (진입점 y=470으로 분리 - EmotionFusion 라인과 안 겹침) -->
+  <polyline points="675,130 690,130 690,470 1090,470"
             fill="none" stroke="#424242" stroke-width="1.5"
             marker-end="url(#arrow)"/>
 
   <!-- RecommendationVisualizer --> Recommendation (renders) -->
-  <polyline points="230,280 250,280 250,960 1090,960"
+  <polyline points="230,280 250,280 250,832 1090,832"
             fill="none" stroke="#424242" stroke-width="1.5"
             marker-end="url(#arrow)"/>
-  <text x="255" y="940" font-size="9" fill="#424242">렌더링</text>
+  <text x="285" y="822" font-size="9" fill="#424242">렌더링</text>
 
   <!-- ======================================================= -->
   <!-- 범례                                                    -->
