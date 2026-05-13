@@ -6,34 +6,38 @@
 <title>요구사항 문서 v1.0 — AI 기반 감정 분석 음악 추천 시스템</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap');
-@page { size: A4; margin: 2cm; }
+@page { size: A4; margin: 0.8cm 1.5cm; }
+@page :first { margin: 2cm; }
 *, *::before, *::after { box-sizing: border-box; }
 body {
   font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #212121;
   max-width: 800px;
-  margin: 2em auto;
-  padding: 0 2em;
+  margin: 1em auto;
+  padding: 0 1.5em;
   font-size: 14px;
 }
 h1, h2, h3, h4 { color: #0D47A1; }
-h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.3em; font-size: 1.6em; }
-h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.2em; margin-top: 2em; font-size: 1.3em; }
-h3 { font-size: 1.1em; margin-top: 1.5em; }
-h4 { font-size: 1em; margin-top: 1.2em; color: #1565C0; }
-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-th, td { border: 1px solid #E0E0E0; padding: 0.5em 0.7em; text-align: left; }
+h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.3em; font-size: 1.6em; margin-top: 0.8em; margin-bottom: 0.4em; }
+h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.2em; margin-top: 1em; margin-bottom: 0.4em; font-size: 1.3em; }
+h3 { font-size: 1.1em; margin-top: 0.8em; margin-bottom: 0.3em; }
+h4 { font-size: 1em; margin-top: 0.6em; margin-bottom: 0.2em; color: #1565C0; }
+p { margin: 0.4em 0; }
+ul, ol { margin: 0.4em 0; padding-left: 1.5em; }
+li { margin: 0.15em 0; }
+table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+th, td { border: 1px solid #E0E0E0; padding: 0.4em 0.7em; text-align: left; }
 th { background: #E3F2FD; font-weight: 600; }
 td { vertical-align: top; }
 tr:nth-child(even) td { background: #FAFAFA; }
 code, .id { background: #F5F5F5; padding: 0.1em 0.4em; border-radius: 3px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.9em; }
-figure { margin: 1.5em 0; text-align: center; }
-figcaption { font-size: 0.9em; color: #616161; margin-top: 0.5em; }
+figure { margin: 0.6em 0; text-align: center; }
+figcaption { font-size: 0.9em; color: #616161; margin-top: 0.3em; }
 blockquote {
   border-left: 4px solid #1976D2;
-  margin: 1em 0;
-  padding: 0.5em 1em;
+  margin: 0.5em 0;
+  padding: 0.4em 1em;
   background: #F8F9FA;
   font-style: italic;
 }
@@ -68,43 +72,43 @@ blockquote {
 }
 .meta-box table { margin: 0; }
 .meta-box th { width: 35%; background: #E3F2FD; }
-.toc { margin: 1.5em 0; }
+.toc { margin: 0.8em 0; }
 .toc ol { padding-left: 1.5em; }
-.toc li { margin: 0.3em 0; }
+.toc li { margin: 0.15em 0; }
 .toc a { color: #1565C0; text-decoration: none; }
 .toc a:hover { text-decoration: underline; }
 .persona-card {
   border: 1px solid #BBDEFB;
   border-radius: 6px;
-  padding: 1em 1.2em;
-  margin: 1em 0;
+  padding: 0.7em 1em;
+  margin: 0.5em 0;
   background: #FAFAFA;
 }
 .persona-card h4 { margin-top: 0; color: #0D47A1; }
 .highlight-box {
   background: #E3F2FD;
   border-left: 4px solid #1976D2;
-  padding: 0.7em 1em;
-  margin: 1em 0;
+  padding: 0.5em 1em;
+  margin: 0.5em 0;
   border-radius: 0 4px 4px 0;
 }
 .appendix-log {
   background: #F9F9F9;
   border: 1px solid #E0E0E0;
   border-radius: 4px;
-  padding: 1em 1.2em;
-  margin: 1.5em 0;
+  padding: 0.7em 1em;
+  margin: 0.7em 0;
   font-size: 0.92em;
 }
 .appendix-log h4 { margin-top: 0; color: #0D47A1; }
-.dialogue { margin: 0.5em 0; }
+.dialogue { margin: 0.3em 0; }
 .dialogue .speaker { font-weight: 700; color: #1565C0; }
 .dialogue .speaker.persona { color: #424242; }
 @media print {
-  body { max-width: none; }
+  body { max-width: none; margin: 0 auto; padding: 0 0.5em; }
   h2 { page-break-before: auto; }
   .page-break { page-break-after: always; }
-  table, figure { page-break-inside: avoid; }
+  table, figure, .persona-card, .appendix-log { page-break-inside: avoid; }
   .cover { page-break-after: always; min-height: auto; padding: 3em 0; }
   a { color: inherit; text-decoration: none; }
 }
@@ -162,7 +166,6 @@ blockquote {
 <p><strong>부록</strong></p>
 <ul>
   <li><a href="#appA">부록 A. AI 시뮬레이션 로그</a></li>
-  <li><a href="#appB">부록 B. 명확화 기록 (C-0001)</a></li>
 </ul>
 </div>
 
@@ -303,7 +306,7 @@ blockquote {
 
 <h3>4.1 인터뷰 진행 방법</h3>
 <p>
-본 프로젝트의 AI 인터뷰는 <strong>C-0001 결정 (부록 B 참조)</strong>에 따라 <strong>(a) AI에 페르소나를 부여한 후 인터뷰 시뮬레이션</strong> 형식으로 진행되었다. 각 페르소나별로 설정 프롬프트를 작성하여 AI에 역할을 부여하고, 인터뷰어가 질문하면 해당 페르소나의 관점에서 응답하는 대화 로그를 생성하였다. 전체 인터뷰 로그는 부록 A에 수록되어 있다.
+본 프로젝트의 AI 인터뷰는 <strong>C-0001 결정</strong> (<code>docs/clarifications.md</code>)에 따라 <strong>(a) AI에 페르소나를 부여한 후 인터뷰 시뮬레이션</strong> 형식으로 진행되었다. 각 페르소나별로 설정 프롬프트를 작성하여 AI에 역할을 부여하고, 인터뷰어가 질문하면 해당 페르소나의 관점에서 응답하는 대화 로그를 생성하였다. 전체 인터뷰 로그는 부록 A에 수록되어 있다.
 </p>
 <div class="highlight-box">
   <strong>형식 확정 근거 (C-0001):</strong> "AI 시뮬레이션 로그"는 AI를 사용자 대리로 두고 시스템을 테스트하는 (b)가 아닌, AI에 페르소나 부여 후 인터뷰 시뮬레이션 대화 로그인 (a)로 확정됨. 현재 구조 <code>docs/ai-interviews/persona-*.md</code>가 본 결정과 일치한다.
@@ -967,38 +970,6 @@ blockquote {
 </div>
 
 <div class="page-break"></div>
-
-<!-- ===== 부록 B ===== -->
-<h1 id="appB">부록 B. 명확화 기록 (C-0001)</h1>
-
-<h3>C-0001 — "AI 시뮬레이션 로그"의 정의</h3>
-<table>
-  <tbody>
-    <tr><th style="width:25%">일자</th><td>2026-05-12</td></tr>
-    <tr><th>출처</th><td>TA/교수 답변</td></tr>
-    <tr><th>관련 이슈</th><td>#8</td></tr>
-  </tbody>
-</table>
-
-<h4>질문</h4>
-<p>SE 기말 프로젝트 1단계 산출물 중 "AI 시뮬레이션 로그"가 의미하는 것이 다음 두 해석 중 무엇인가?</p>
-<ul>
-  <li><strong>(a)</strong> AI에 페르소나 부여 후 인터뷰 시뮬레이션 (대화 로그)</li>
-  <li><strong>(b)</strong> AI를 사용자 대리로 두고 시스템 테스트 (입출력 로그)</li>
-</ul>
-
-<h4>결정</h4>
-<div class="highlight-box">
-  <strong>(a) AI에 페르소나 부여 후 인터뷰 시뮬레이션 (대화 로그)</strong>으로 확정.
-</div>
-
-<h4>영향</h4>
-<ul>
-  <li>이슈 #6 (페르소나)과 이슈 #7 (AI 인터뷰 로그)의 작업 방향이 확정됨.</li>
-  <li>현재 구조 <code>docs/ai-interviews/persona-*.md</code> (페르소나 프로필 + 설정 프롬프트 + 인터뷰 대화 로그가 한 파일에 통합)가 본 결정과 일치 — 그대로 유지.</li>
-  <li>이슈 #7의 잔여 작업은 <code>docs/interview-mapping.md</code> (인터뷰에서 도출된 니즈 → FR/NFR 매핑 표) 작성으로 좁혀짐.</li>
-  <li>(b) 해석은 시스템이 어느 정도 동작한 이후의 평가 단계에서나 의미가 있어 1단계 산출물 범위 밖.</li>
-</ul>
 
 </body>
 </html>
