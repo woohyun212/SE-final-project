@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1080"
+     font-family="'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif">
+
+  <defs>
+    <!-- 일반 연관 화살표 (filled) -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#424242"/>
+    </marker>
+    <!-- 실현(realization): 오픈 삼각형 -->
+    <marker id="open-triangle" viewBox="0 0 12 12" refX="11" refY="6"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="none" stroke="#424242" stroke-width="1.5"/>
+    </marker>
+    <!-- 상속(inheritance): 오픈 삼각형 (같은 모양) -->
+    <marker id="inheritance" viewBox="0 0 12 12" refX="11" refY="6"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="none" stroke="#424242" stroke-width="1.5"/>
+    </marker>
+    <!-- 합성(composition): 채운 다이아몬드 -->
+    <marker id="diamond-filled" viewBox="0 0 16 10" refX="15" refY="5"
+            markerWidth="10" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 5 L 7 0 L 14 5 L 7 10 z" fill="#424242"/>
+    </marker>
+    <!-- 집약(aggregation): 빈 다이아몬드 -->
+    <marker id="diamond-open" viewBox="0 0 16 10" refX="15" refY="5"
+            markerWidth="10" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 5 L 7 0 L 14 5 L 7 10 z" fill="none" stroke="#424242" stroke-width="1.5"/>
+    </marker>
+    <!-- 의존(dependency): 작은 화살표 -->
+    <marker id="dep-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#757575"/>
+    </marker>
+  </defs>
+
+  <!-- ===== 배경 ===== -->
+  <rect x="0" y="0" width="1400" height="1080" fill="#FAFAFA"/>
+
+  <!-- ===== 제목 ===== -->
+  <text x="700" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#212121">
+    클래스 다이어그램 — AI 감정분석 음악추천 시스템
+  </text>
+
+  <!-- ======================================================= -->
+  <!-- 영역 배경                                               -->
+  <!-- ======================================================= -->
+
+  <!-- Client 영역 배경 -->
+  <rect x="20" y="55" width="230" height="400" rx="10" fill="#C8E6C9" stroke="#33691E" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="135" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5E20">Client</text>
+
+  <!-- Backend 영역 배경 -->
+  <rect x="270" y="55" width="560" height="680" rx="10" fill="#BBDEFB" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="550" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#0D47A1">Backend</text>
+
+  <!-- ML 영역 배경 -->
+  <rect x="850" y="55" width="210" height="230" rx="10" fill="#FFCCBC" stroke="#E65100" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="955" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#BF360C">ML Server</text>
+
+  <!-- DB 영역 배경 -->
+  <rect x="850" y="305" width="210" height="160" rx="10" fill="#FFF9C4" stroke="#F57F17" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="955" y="325" text-anchor="middle" font-size="13" font-weight="700" fill="#E65100">DB</text>
+
+  <!-- 엔티티 영역 배경 -->
+  <rect x="1080" y="55" width="300" height="950" rx="10" fill="#ECEFF1" stroke="#455A64" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="1230" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">도메인 엔티티</text>
+
+  <!-- ======================================================= -->
+  <!-- 클래스 박스 헬퍼 매크로 (직접 렌더)                    -->
+  <!-- 형식: rect + divider + title + members                  -->
+  <!-- ======================================================= -->
+
+  <!-- ===== CLIENT CLASSES ===== -->
+
+  <!-- VoiceCapture  x=30 y=90 w=200 -->
+  <rect x="30" y="90" width="200" height="115" rx="4" fill="#E8F5E9" stroke="#33691E" stroke-width="1.8"/>
+  <line x1="30" y1="118" x2="230" y2="118" stroke="#33691E" stroke-width="1"/>
+  <text x="130" y="109" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5E20">VoiceCapture</text>
+  <text x="38" y="134" font-size="10" fill="#2E7D32">+ record(): AudioBlob</text>
+  <text x="38" y="148" font-size="10" fill="#2E7D32">+ stop(): AudioBlob</text>
+  <text x="38" y="162" font-size="10" fill="#2E7D32">+ send(audio: AudioBlob): void</text>
+  <text x="38" y="176" font-size="10" fill="#2E7D32">- maxDuration: int</text>
+  <text x="38" y="190" font-size="10" fill="#2E7D32">- mediaRecorder: MediaRecorder</text>
+
+  <!-- RecommendationVisualizer  x=30 y=230 w=200 -->
+  <rect x="30" y="230" width="200" height="100" rx="4" fill="#E8F5E9" stroke="#33691E" stroke-width="1.8"/>
+  <line x1="30" y1="258" x2="230" y2="258" stroke="#33691E" stroke-width="1"/>
+  <text x="130" y="249" text-anchor="middle" font-size="11" font-weight="700" fill="#1B5E20">RecommendationVisualizer</text>
+  <text x="38" y="274" font-size="10" fill="#2E7D32">+ renderChart(emotions: EmotionVector[],</text>
+  <text x="38" y="286" font-size="10" fill="#2E7D32">    tracks: Music[]): void</text>
+  <text x="38" y="300" font-size="10" fill="#2E7D32">+ renderList(recs: Recommendation[]): void</text>
+
+  <!-- ===== BACKEND CLASSES ===== -->
+
+  <!-- STTService (interface)  x=280 y=90 w=185 -->
+  <rect x="280" y="90" width="185" height="95" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="280" y1="120" x2="465" y2="120" stroke="#1976D2" stroke-width="1"/>
+  <text x="372" y="106" text-anchor="middle" font-size="10" font-style="italic" fill="#1565C0">«interface»</text>
+  <text x="372" y="118" text-anchor="middle" font-size="13" font-weight="700" fill="#0D47A1">STTService</text>
+  <text x="288" y="136" font-size="10" fill="#1565C0">+ transcribe(audio: AudioBlob): string</text>
+
+  <!-- WhisperLocalAdapter  x=280 y=215 w=185 -->
+  <rect x="280" y="215" width="185" height="80" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="280" y1="240" x2="465" y2="240" stroke="#1976D2" stroke-width="1"/>
+  <text x="372" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="#0D47A1">WhisperLocalAdapter</text>
+  <text x="288" y="255" font-size="10" fill="#1565C0">+ transcribe(audio: AudioBlob): string</text>
+  <text x="288" y="268" font-size="10" fill="#1565C0">- modelPath: string</text>
+
+  <!-- WhisperApiAdapter  x=280 y=320 w=185 -->
+  <rect x="280" y="320" width="185" height="80" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="280" y1="345" x2="465" y2="345" stroke="#1976D2" stroke-width="1"/>
+  <text x="372" y="337" text-anchor="middle" font-size="12" font-weight="700" fill="#0D47A1">WhisperApiAdapter</text>
+  <text x="288" y="360" font-size="10" fill="#1565C0">+ transcribe(audio: AudioBlob): string</text>
+  <text x="288" y="373" font-size="10" fill="#1565C0">- apiKey: string</text>
+  <text x="288" y="386" font-size="10" fill="#1565C0">- endpoint: string</text>
+
+  <!-- ContextAnalyzer  x=490 y=90 w=185 -->
+  <rect x="490" y="90" width="185" height="80" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="490" y1="115" x2="675" y2="115" stroke="#1976D2" stroke-width="1"/>
+  <text x="582" y="107" text-anchor="middle" font-size="13" font-weight="700" fill="#0D47A1">ContextAnalyzer</text>
+  <text x="498" y="131" font-size="10" fill="#1565C0">+ analyze(text: string):</text>
+  <text x="498" y="143" font-size="10" fill="#1565C0">    ContextRepresentation</text>
+  <text x="498" y="157" font-size="10" fill="#1565C0">- llmClient: GeminiClient</text>
+
+  <!-- EmotionFusion  x=490 y=200 w=185 -->
+  <rect x="490" y="200" width="185" height="80" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="490" y1="225" x2="675" y2="225" stroke="#1976D2" stroke-width="1"/>
+  <text x="582" y="217" text-anchor="middle" font-size="13" font-weight="700" fill="#0D47A1">EmotionFusion</text>
+  <text x="498" y="241" font-size="10" fill="#1565C0">+ fuse(emotion: EmotionVector,</text>
+  <text x="498" y="253" font-size="10" fill="#1565C0">    ctx: ContextRepresentation)</text>
+  <text x="498" y="265" font-size="10" fill="#1565C0">    : FusedQuery</text>
+
+  <!-- RecommendationEngine  x=490 y=310 w=185 -->
+  <rect x="490" y="310" width="185" height="90" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="490" y1="335" x2="675" y2="335" stroke="#1976D2" stroke-width="1"/>
+  <text x="582" y="327" text-anchor="middle" font-size="12" font-weight="700" fill="#0D47A1">RecommendationEngine</text>
+  <text x="498" y="351" font-size="10" fill="#1565C0">+ recommend(query: FusedQuery):</text>
+  <text x="498" y="363" font-size="10" fill="#1565C0">    Recommendation[]</text>
+  <text x="498" y="375" font-size="10" fill="#1565C0">- computeSimilarity(q, m): float</text>
+  <text x="498" y="387" font-size="10" fill="#1565C0">- catalog: MusicCatalog</text>
+
+  <!-- FeedbackLogger  x=490 y=430 w=185 -->
+  <rect x="490" y="430" width="185" height="90" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="490" y1="455" x2="675" y2="455" stroke="#1976D2" stroke-width="1"/>
+  <text x="582" y="447" text-anchor="middle" font-size="13" font-weight="700" fill="#0D47A1">FeedbackLogger</text>
+  <text x="498" y="471" font-size="10" fill="#1565C0">+ log(event: FeedbackEvent): void</text>
+  <text x="498" y="483" font-size="10" fill="#1565C0">+ aggregate(userId: string): Profile</text>
+  <text x="498" y="495" font-size="10" fill="#1565C0">- db: PostgreSQLClient</text>
+
+  <!-- CatalogSynchronizer  x=280 y=450 w=185 -->
+  <rect x="280" y="450" width="185" height="80" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.8"/>
+  <line x1="280" y1="475" x2="465" y2="475" stroke="#1976D2" stroke-width="1"/>
+  <text x="372" y="467" text-anchor="middle" font-size="12" font-weight="700" fill="#0D47A1">CatalogSynchronizer</text>
+  <text x="288" y="491" font-size="10" fill="#1565C0">+ syncFromYouTube(</text>
+  <text x="288" y="503" font-size="10" fill="#1565C0">    seedPlaylistId: string): void</text>
+  <text x="288" y="515" font-size="10" fill="#1565C0">- youtubeClient, spotifyClient</text>
+
+  <!-- ===== ML CLASS ===== -->
+
+  <!-- EmotionClassifier  x=860 y=90 w=190 -->
+  <rect x="860" y="90" width="190" height="100" rx="4" fill="#FBE9E7" stroke="#E65100" stroke-width="1.8"/>
+  <line x1="860" y1="115" x2="1050" y2="115" stroke="#E65100" stroke-width="1"/>
+  <text x="955" y="107" text-anchor="middle" font-size="13" font-weight="700" fill="#BF360C">EmotionClassifier</text>
+  <text x="868" y="131" font-size="10" fill="#BF360C">+ predict(audio: AudioBlob):</text>
+  <text x="868" y="143" font-size="10" fill="#BF360C">    EmotionVector</text>
+  <text x="868" y="157" font-size="10" fill="#BF360C">- model: wav2vec2Model</text>
+  <text x="868" y="170" font-size="9" font-style="italic" fill="#E64A19">// ADR-0002: wav2vec2 fine-tuning</text>
+
+  <!-- ===== DB CLASS ===== -->
+
+  <!-- MusicCatalog  x=860 y=330 w=190 -->
+  <rect x="860" y="330" width="190" height="90" rx="4" fill="#FFF9C4" stroke="#F57F17" stroke-width="1.8"/>
+  <line x1="860" y1="355" x2="1050" y2="355" stroke="#F57F17" stroke-width="1"/>
+  <text x="955" y="347" text-anchor="middle" font-size="13" font-weight="700" fill="#E65100">MusicCatalog</text>
+  <text x="868" y="371" font-size="10" fill="#E65100">+ search(features: AudioFeatures):</text>
+  <text x="868" y="383" font-size="10" fill="#E65100">    Music[]</text>
+  <text x="868" y="395" font-size="10" fill="#E65100">+ insert(track: Music): void</text>
+  <text x="868" y="408" font-size="10" fill="#E65100">- db: PostgreSQLClient</text>
+
+  <!-- ======================================================= -->
+  <!-- 엔티티 클래스                                           -->
+  <!-- ======================================================= -->
+
+  <!-- User  x=1090 y=90 w=280 -->
+  <rect x="1090" y="90" width="280" height="105" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="115" x2="1370" y2="115" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="107" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">User</text>
+  <text x="1098" y="131" font-size="10" fill="#37474F">+ id: string</text>
+  <text x="1098" y="145" font-size="10" fill="#37474F">+ email: string</text>
+  <text x="1098" y="159" font-size="10" fill="#37474F">+ passwordHash: string</text>
+  <text x="1098" y="173" font-size="10" fill="#37474F">+ createdAt: datetime</text>
+
+  <!-- Profile  x=1090 y=215 w=280 -->
+  <rect x="1090" y="215" width="280" height="95" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="240" x2="1370" y2="240" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="232" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">Profile</text>
+  <text x="1098" y="256" font-size="10" fill="#37474F">+ userId: string</text>
+  <text x="1098" y="270" font-size="10" fill="#37474F">+ preferredGenres: string[]</text>
+  <text x="1098" y="284" font-size="10" fill="#37474F">+ feedbackHistory: Feedback[]</text>
+  <text x="1098" y="298" font-size="10" fill="#37474F">+ preferences: dict</text>
+
+  <!-- EmotionVector  x=1090 y=330 w=280 -->
+  <rect x="1090" y="330" width="280" height="95" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="355" x2="1370" y2="355" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="347" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">EmotionVector</text>
+  <text x="1098" y="371" font-size="10" fill="#37474F">+ valence: float</text>
+  <text x="1098" y="385" font-size="10" fill="#37474F">+ energy: float</text>
+  <text x="1098" y="399" font-size="10" fill="#37474F">+ arousal: float</text>
+  <text x="1098" y="413" font-size="10" fill="#37474F">+ dominance: float</text>
+
+  <!-- ContextRepresentation  x=1090 y=445 w=280 -->
+  <rect x="1090" y="445" width="280" height="95" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="470" x2="1370" y2="470" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="462" text-anchor="middle" font-size="12" font-weight="700" fill="#263238">ContextRepresentation</text>
+  <text x="1098" y="486" font-size="10" fill="#37474F">+ keywords: string[]</text>
+  <text x="1098" y="500" font-size="10" fill="#37474F">+ situation: string</text>
+  <text x="1098" y="514" font-size="10" fill="#37474F">+ mood: string</text>
+  <text x="1098" y="528" font-size="10" fill="#37474F">+ rawText: string</text>
+
+  <!-- FusedQuery  x=1090 y=560 w=280 -->
+  <rect x="1090" y="560" width="280" height="80" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="585" x2="1370" y2="585" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="577" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">FusedQuery</text>
+  <text x="1098" y="601" font-size="10" fill="#37474F">+ emotion: EmotionVector</text>
+  <text x="1098" y="615" font-size="10" fill="#37474F">+ context: ContextRepresentation</text>
+
+  <!-- Music  x=1090 y=660 w=280 -->
+  <rect x="1090" y="660" width="280" height="105" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="685" x2="1370" y2="685" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="677" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">Music</text>
+  <text x="1098" y="701" font-size="10" fill="#37474F">+ id: string</text>
+  <text x="1098" y="715" font-size="10" fill="#37474F">+ title: string</text>
+  <text x="1098" y="729" font-size="10" fill="#37474F">+ artist: string</text>
+  <text x="1098" y="743" font-size="10" fill="#37474F">+ albumArt: string</text>
+  <text x="1098" y="757" font-size="10" fill="#37474F">+ audioFeatures: AudioFeatures</text>
+
+  <!-- Recommendation  x=1090 y=785 w=280 -->
+  <rect x="1090" y="785" width="280" height="95" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="810" x2="1370" y2="810" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="802" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">Recommendation</text>
+  <text x="1098" y="826" font-size="10" fill="#37474F">+ music: Music</text>
+  <text x="1098" y="840" font-size="10" fill="#37474F">+ score: float</text>
+  <text x="1098" y="854" font-size="10" fill="#37474F">+ reason: string</text>
+  <text x="1098" y="868" font-size="10" fill="#37474F">+ createdAt: datetime</text>
+
+  <!-- Feedback  x=1090 y=900 w=280 -->
+  <rect x="1090" y="900" width="280" height="105" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="1090" y1="925" x2="1370" y2="925" stroke="#455A64" stroke-width="1"/>
+  <text x="1230" y="917" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">Feedback</text>
+  <text x="1098" y="941" font-size="10" fill="#37474F">+ userId: string</text>
+  <text x="1098" y="955" font-size="10" fill="#37474F">+ musicId: string</text>
+  <text x="1098" y="969" font-size="10" fill="#37474F">+ type: 'like'|'dislike'|'play'</text>
+  <text x="1098" y="983" font-size="10" fill="#37474F">+ timestamp: datetime</text>
+
+  <!-- FeedbackEvent (extra entity)  x=1090 y=1015 w=280 -->
+  <rect x="860" y="490" width="190" height="80" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="860" y1="515" x2="1050" y2="515" stroke="#455A64" stroke-width="1"/>
+  <text x="955" y="507" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">FeedbackEvent</text>
+  <text x="868" y="531" font-size="10" fill="#37474F">+ type: string</text>
+  <text x="868" y="545" font-size="10" fill="#37474F">+ musicId: string</text>
+  <text x="868" y="559" font-size="10" fill="#37474F">+ playbackSeconds?: int</text>
+
+  <!-- AudioFeatures (extra entity) in Backend area -->
+  <rect x="280" y="600" width="185" height="95" rx="4" fill="#ECEFF1" stroke="#455A64" stroke-width="1.8"/>
+  <line x1="280" y1="625" x2="465" y2="625" stroke="#455A64" stroke-width="1"/>
+  <text x="372" y="617" text-anchor="middle" font-size="13" font-weight="700" fill="#263238">AudioFeatures</text>
+  <text x="288" y="641" font-size="10" fill="#37474F">+ valence: float</text>
+  <text x="288" y="655" font-size="10" fill="#37474F">+ energy: float</text>
+  <text x="288" y="669" font-size="10" fill="#37474F">+ danceability: float</text>
+  <text x="288" y="683" font-size="10" fill="#37474F">+ tempo: float</text>
+
+  <!-- ======================================================= -->
+  <!-- 관계선                                                  -->
+  <!-- ======================================================= -->
+
+  <!-- WhisperLocalAdapter realization STTService (점선 + 오픈 삼각형) -->
+  <!-- STTService bottom(y=185) to WhisperLocalAdapter top(y=215): vertical -->
+  <line x1="372" y1="185" x2="372" y2="215" stroke="#424242" stroke-width="1.5"
+        stroke-dasharray="5,3" marker-end="url(#open-triangle)"/>
+
+  <!-- WhisperApiAdapter realization STTService -->
+  <!-- STTService y=185 to WhisperApiAdapter y=320: go down via bend -->
+  <polyline points="372,185 372,195 340,195 340,320"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            stroke-dasharray="5,3" marker-end="url(#open-triangle)"/>
+
+  <!-- User composition Profile (User owns Profile) -->
+  <!-- User right(x=1370,y=143) to Profile left(x=1090,y=263): horizontal -->
+  <line x1="1230" y1="195" x2="1230" y2="215"
+        fill="none" stroke="#424242" stroke-width="1.5"
+        marker-start="url(#diamond-filled)"/>
+
+  <!-- Profile aggregation Feedback -->
+  <line x1="1230" y1="310" x2="1230" y2="330"
+        fill="none" stroke="#424242" stroke-width="1.5"
+        marker-end="url(#arrow)"/>
+  <text x="1240" y="322" font-size="9" fill="#424242">집계</text>
+
+  <!-- (jump over gap — Profile 310→ Feedback 900 via right side) -->
+  <polyline points="1370,263 1385,263 1385,948 1370,948"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-start="url(#diamond-open)"/>
+  <text x="1388" y="610" font-size="9" fill="#424242" transform="rotate(90,1388,610)">aggregates *</text>
+
+  <!-- Recommendation composition Music -->
+  <line x1="1230" y1="880" x2="1230" y2="785"
+        fill="none" stroke="#424242" stroke-width="1.5"
+        marker-end="url(#diamond-filled)"/>
+
+  <!-- Music composition AudioFeatures -->
+  <!-- Music left(x=1090,y=712) → AudioFeatures right(x=465,y=648) -->
+  <polyline points="1090,712 1075,712 1075,648 465,648"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#diamond-filled)"/>
+
+  <!-- EmotionFusion ..> EmotionVector (dependency) -->
+  <!-- EmotionFusion right(x=675,y=240) → EmotionVector left(x=1090,y=377) -->
+  <polyline points="675,240 700,240 700,377 1090,377"
+            fill="none" stroke="#757575" stroke-width="1.3"
+            stroke-dasharray="5,3" marker-end="url(#dep-arrow)"/>
+
+  <!-- EmotionFusion ..> ContextRepresentation -->
+  <polyline points="675,265 720,265 720,492 1090,492"
+            fill="none" stroke="#757575" stroke-width="1.3"
+            stroke-dasharray="5,3" marker-end="url(#dep-arrow)"/>
+
+  <!-- EmotionFusion --> FusedQuery -->
+  <polyline points="675,250 760,250 760,600 1090,600"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- RecommendationEngine --> Recommendation -->
+  <polyline points="675,355 780,355 780,832 1090,832"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- RecommendationEngine ..> MusicCatalog (uses) -->
+  <!-- RE right(x=675,y=355) → MusicCatalog left(x=860,y=375) -->
+  <polyline points="675,375 860,375"
+            fill="none" stroke="#757575" stroke-width="1.3"
+            stroke-dasharray="5,3" marker-end="url(#dep-arrow)"/>
+  <text x="730" y="370" font-size="9" fill="#757575">uses</text>
+
+  <!-- FeedbackLogger --> Feedback -->
+  <polyline points="675,475 800,475 800,948 1090,948"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- FeedbackLogger --> FeedbackEvent (receives) -->
+  <polyline points="675,490 860,530"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- CatalogSynchronizer --> MusicCatalog -->
+  <polyline points="372,530 372,560 830,560 830,375 860,375"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+  <text x="590" y="553" font-size="9" fill="#424242">적재</text>
+
+  <!-- VoiceCapture --> EmotionClassifier -->
+  <!-- VC right(x=230,y=140) → EC left(x=860,y=140) via top -->
+  <polyline points="230,140 255,140 255,50 830,50 830,140 860,140"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+  <text x="540" y="45" font-size="9" fill="#424242">오디오 전송</text>
+
+  <!-- VoiceCapture --> STTService -->
+  <polyline points="230,160 255,160 255,137 280,137"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- STTService --> ContextAnalyzer -->
+  <line x1="465" y1="130" x2="490" y2="130"
+        stroke="#424242" stroke-width="1.5"
+        marker-end="url(#arrow)"/>
+  <text x="470" y="124" font-size="9" fill="#424242">텍스트</text>
+
+  <!-- EmotionClassifier --> EmotionVector -->
+  <!-- EC right(x=1050,y=140) → EmotionVector left(x=1090,y=377) -->
+  <polyline points="1050,140 1065,140 1065,377 1090,377"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+  <text x="1055" y="260" font-size="9" fill="#424242" transform="rotate(90,1055,260)">생성</text>
+
+  <!-- ContextAnalyzer --> ContextRepresentation -->
+  <polyline points="675,130 690,130 690,492 1090,492"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+
+  <!-- RecommendationVisualizer --> Recommendation (renders) -->
+  <polyline points="230,280 250,280 250,960 1090,960"
+            fill="none" stroke="#424242" stroke-width="1.5"
+            marker-end="url(#arrow)"/>
+  <text x="255" y="940" font-size="9" fill="#424242">렌더링</text>
+
+  <!-- ======================================================= -->
+  <!-- 범례                                                    -->
+  <!-- ======================================================= -->
+  <rect x="20" y="680" width="240" height="185" rx="6" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="1.2"/>
+  <text x="140" y="700" text-anchor="middle" font-size="12" font-weight="700" fill="#424242">범례 (Legend)</text>
+
+  <!-- 실선 화살표: 연관/호출 -->
+  <line x1="35" y1="720" x2="100" y2="720" stroke="#424242" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="108" y="724" font-size="10" fill="#424242">연관 / 호출</text>
+
+  <!-- 점선 삼각형: 실현 -->
+  <line x1="35" y1="742" x2="100" y2="742" stroke="#424242" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#open-triangle)"/>
+  <text x="108" y="746" font-size="10" fill="#424242">실현 (realization)</text>
+
+  <!-- 점선 화살표: 의존 -->
+  <line x1="35" y1="764" x2="100" y2="764" stroke="#757575" stroke-width="1.3" stroke-dasharray="5,3" marker-end="url(#dep-arrow)"/>
+  <text x="108" y="768" font-size="10" fill="#424242">의존 (dependency)</text>
+
+  <!-- 합성 다이아몬드: 합성 -->
+  <line x1="35" y1="786" x2="100" y2="786" stroke="#424242" stroke-width="1.5" marker-start="url(#diamond-filled)"/>
+  <text x="108" y="790" font-size="10" fill="#424242">합성 (composition)</text>
+
+  <!-- 집약 다이아몬드: 집약 -->
+  <line x1="35" y1="808" x2="100" y2="808" stroke="#424242" stroke-width="1.5" marker-start="url(#diamond-open)"/>
+  <text x="108" y="812" font-size="10" fill="#424242">집약 (aggregation)</text>
+
+  <!-- 색상 범례 -->
+  <rect x="28" y="825" width="14" height="10" fill="#C8E6C9" stroke="#33691E" stroke-width="1"/>
+  <text x="48" y="834" font-size="10" fill="#424242">Client</text>
+  <rect x="90" y="825" width="14" height="10" fill="#BBDEFB" stroke="#1976D2" stroke-width="1"/>
+  <text x="110" y="834" font-size="10" fill="#424242">Backend</text>
+  <rect x="28" y="845" width="14" height="10" fill="#FFCCBC" stroke="#E65100" stroke-width="1"/>
+  <text x="48" y="854" font-size="10" fill="#424242">ML Server</text>
+  <rect x="90" y="845" width="14" height="10" fill="#FFF9C4" stroke="#F57F17" stroke-width="1"/>
+  <text x="110" y="854" font-size="10" fill="#424242">DB</text>
+  <rect x="155" y="845" width="14" height="10" fill="#ECEFF1" stroke="#455A64" stroke-width="1"/>
+  <text x="175" y="854" font-size="10" fill="#424242">Entity</text>
+
+</svg>
