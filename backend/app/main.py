@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import Base, engine
+from app.models import token as _token_models  # noqa: F401 — registers RefreshToken with Base
 from app.routers import auth
 
 
