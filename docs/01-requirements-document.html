@@ -6,38 +6,38 @@
 <title>요구사항 문서 v1.0 — AI 기반 감정 분석 음악 추천 시스템</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap');
-@page { size: A4; margin: 0.8cm 1.5cm; }
+@page { size: A4; margin: 0.5cm 1cm; }
 @page :first { margin: 2cm; }
 *, *::before, *::after { box-sizing: border-box; }
 body {
   font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-  line-height: 1.5;
+  line-height: 1.45;
   color: #212121;
   max-width: 800px;
-  margin: 1em auto;
-  padding: 0 1.5em;
+  margin: 0;
+  padding: 0 1em;
   font-size: 14px;
 }
 h1, h2, h3, h4 { color: #0D47A1; }
-h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.3em; font-size: 1.6em; margin-top: 0.8em; margin-bottom: 0.4em; }
-h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.2em; margin-top: 1em; margin-bottom: 0.4em; font-size: 1.3em; }
-h3 { font-size: 1.1em; margin-top: 0.8em; margin-bottom: 0.3em; }
-h4 { font-size: 1em; margin-top: 0.6em; margin-bottom: 0.2em; color: #1565C0; }
-p { margin: 0.4em 0; }
-ul, ol { margin: 0.4em 0; padding-left: 1.5em; }
-li { margin: 0.15em 0; }
-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
-th, td { border: 1px solid #E0E0E0; padding: 0.4em 0.7em; text-align: left; }
+h1 { border-bottom: 3px solid #1976D2; padding-bottom: 0.2em; font-size: 1.5em; margin: 1.4em 0 0.3em; }
+h2 { border-bottom: 1px solid #BBDEFB; padding-bottom: 0.1em; margin: 1em 0 0.3em; font-size: 1.22em; }
+h3 { font-size: 1.08em; margin: 0.7em 0 0.2em; }
+h4 { font-size: 0.98em; margin: 0.2em 0 0.05em; color: #1565C0; }
+p { margin: 0.15em 0; }
+ul, ol { margin: 0.15em 0; padding-left: 1.3em; }
+li { margin: 0.05em 0; }
+table { border-collapse: collapse; width: 100%; margin: 0.2em 0; }
+th, td { border: 1px solid #E0E0E0; padding: 0.2em 0.5em; text-align: left; }
 th { background: #E3F2FD; font-weight: 600; }
 td { vertical-align: top; }
 tr:nth-child(even) td { background: #FAFAFA; }
-code, .id { background: #F5F5F5; padding: 0.1em 0.4em; border-radius: 3px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.9em; }
-figure { margin: 0.6em 0; text-align: center; }
-figcaption { font-size: 0.9em; color: #616161; margin-top: 0.3em; }
+code, .id { background: #F5F5F5; padding: 0.05em 0.3em; border-radius: 3px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.88em; }
+figure { margin: 0.2em 0; text-align: center; }
+figcaption { font-size: 0.85em; color: #616161; margin-top: 0.1em; }
 blockquote {
   border-left: 4px solid #1976D2;
-  margin: 0.5em 0;
-  padding: 0.4em 1em;
+  margin: 0.2em 0;
+  padding: 0.2em 0.7em;
   background: #F8F9FA;
   font-style: italic;
 }
@@ -72,45 +72,44 @@ blockquote {
 }
 .meta-box table { margin: 0; }
 .meta-box th { width: 35%; background: #E3F2FD; }
-.toc { margin: 0.8em 0; }
-.toc ol { padding-left: 1.5em; }
-.toc li { margin: 0.15em 0; }
+.toc { margin: 0.3em 0; }
+.toc ol { padding-left: 1.3em; }
+.toc li { margin: 0.05em 0; }
 .toc a { color: #1565C0; text-decoration: none; }
 .toc a:hover { text-decoration: underline; }
 .persona-card {
   border: 1px solid #BBDEFB;
   border-radius: 6px;
-  padding: 0.7em 1em;
-  margin: 0.5em 0;
+  padding: 0.3em 0.6em;
+  margin: 0.2em 0;
   background: #FAFAFA;
 }
 .persona-card h4 { margin-top: 0; color: #0D47A1; }
 .highlight-box {
   background: #E3F2FD;
   border-left: 4px solid #1976D2;
-  padding: 0.5em 1em;
-  margin: 0.5em 0;
+  padding: 0.2em 0.6em;
+  margin: 0.2em 0;
   border-radius: 0 4px 4px 0;
 }
 .appendix-log {
   background: #F9F9F9;
   border: 1px solid #E0E0E0;
   border-radius: 4px;
-  padding: 0.7em 1em;
-  margin: 0.7em 0;
-  font-size: 0.92em;
+  padding: 0.4em 0.7em;
+  margin: 0.2em 0;
+  font-size: 0.9em;
 }
 .appendix-log h4 { margin-top: 0; color: #0D47A1; }
-.dialogue { margin: 0.3em 0; }
+.dialogue { margin: 0.05em 0; }
 .dialogue .speaker { font-weight: 700; color: #1565C0; }
 .dialogue .speaker.persona { color: #424242; }
 @media print {
-  body { max-width: none; margin: 0 auto; padding: 0 0.5em; }
-  h2 { page-break-before: auto; }
+  body { max-width: none; margin: 0; padding: 0 0.2em; }
   .page-break { page-break-after: always; }
-  table, figure, .persona-card, .appendix-log { page-break-inside: avoid; }
   .cover { page-break-after: always; min-height: auto; padding: 3em 0; }
   a { color: inherit; text-decoration: none; }
+  /* tight-flow: page-break-inside avoid 룰 + h2 page-break-before 룰 모두 제거 — 모든 콘텐츠가 페이지 경계 자유롭게 넘어가며 빈 공간 최소화. 잘려도 OK 정책. */
 }
 </style>
 </head>
@@ -131,14 +130,13 @@ blockquote {
   </div>
 </section>
 
-<div class="page-break"></div>
 
 <!-- ===== 개정 이력 ===== -->
 <h2 id="revision">개정 이력</h2>
 <table>
   <thead><tr><th>버전</th><th>일자</th><th>작성자</th><th>변경 사항</th></tr></thead>
   <tbody>
-    <tr><td>v1.0</td><td>2026-05-13</td><td>박우현, 신성민, 정원준</td><td>Sprint #0 산출물 통합 — SRS v1, 페르소나 3명, AI 인터뷰 로그, 유스케이스 다이어그램, FR/NFR 전체, 인터뷰 매핑 표 수록. 중간 보고용 초안 작성.</td></tr>
+    <tr><td>v1.0</td><td>2026-05-13</td><td>박우현, 신성민, 정원준</td><td>Sprint #0 산출물 통합 — 소프트웨어 요구사항 명세서 v1, 페르소나 3명, AI 인터뷰 로그, 유스케이스 다이어그램, 요구사항 전체, 인터뷰 매핑 표 수록. 중간 보고용 초안 작성.</td></tr>
   </tbody>
 </table>
 
@@ -158,9 +156,9 @@ blockquote {
   <li><a href="#sec4">사용자 조사 — AI 인터뷰 결과</a></li>
   <li><a href="#sec5">유스케이스 다이어그램</a></li>
   <li><a href="#sec6">유스케이스 명세</a></li>
-  <li><a href="#sec7">기능 요구사항 (FR)</a></li>
-  <li><a href="#sec8">비기능 요구사항 (NFR)</a></li>
-  <li><a href="#sec9">인터뷰 → FR/NFR 매핑</a></li>
+  <li><a href="#sec7">기능 요구사항</a></li>
+  <li><a href="#sec8">비기능 요구사항</a></li>
+  <li><a href="#sec9">인터뷰 → 요구사항 매핑</a></li>
   <li><a href="#sec10">가정 및 제약사항</a></li>
 </ol>
 <p><strong>부록</strong></p>
@@ -169,7 +167,6 @@ blockquote {
 </ul>
 </div>
 
-<div class="page-break"></div>
 
 <!-- ===== 1. 시스템 개요 ===== -->
 <h1 id="sec1">1. 시스템 개요</h1>
@@ -227,12 +224,11 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
 <!-- ===== 3. 페르소나 ===== -->
 <h1 id="sec3">3. 사용자 조사 — 페르소나</h1>
 
-<p>세 페르소나는 시스템의 주요 사용 시나리오를 대표하도록 설계되었다. 각 페르소나는 AI 인터뷰 시뮬레이션(부록 A)의 설정 기반으로 도출되었으며, SRS v1의 FR/NFR과 직접 연결된다.</p>
+<p>세 페르소나는 시스템의 주요 사용 시나리오를 대표하도록 설계되었다. 각 페르소나는 AI 인터뷰 시뮬레이션(부록 A)의 설정 기반으로 도출되었으며, 소프트웨어 요구사항 명세서 v1의 요구사항과 직접 연결된다.</p>
 
 <!-- 페르소나 1 -->
 <div class="persona-card" id="sec3-1">
@@ -299,7 +295,6 @@ blockquote {
 <blockquote>"한국에서 재생 안 되는 곡을 추천 풀에 넣으면 의미가 없잖아요."</blockquote>
 </div>
 
-<div class="page-break"></div>
 
 <!-- ===== 4. AI 인터뷰 결과 ===== -->
 <h1 id="sec4">4. 사용자 조사 — AI 인터뷰 결과</h1>
@@ -317,7 +312,7 @@ blockquote {
 <h3>4.2 페르소나별 핵심 니즈 도출 결과</h3>
 <table>
   <thead>
-    <tr><th>페르소나</th><th>도출된 핵심 니즈</th><th>연결 FR/NFR</th></tr>
+    <tr><th>페르소나</th><th>도출된 핵심 니즈</th><th>연결 요구사항</th></tr>
   </thead>
   <tbody>
     <tr>
@@ -382,7 +377,6 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
 <!-- ===== 5. 유스케이스 다이어그램 ===== -->
 <h1 id="sec5">5. 유스케이스 다이어그램</h1>
@@ -552,7 +546,6 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
 <!-- ===== 6. 유스케이스 명세 ===== -->
 <h1 id="sec6">6. 유스케이스 명세</h1>
@@ -622,10 +615,9 @@ blockquote {
   <li><strong>E3 (네트워크 단절):</strong> 5단계에서 전송 실패 → 재시도 옵션 제공.</li>
 </ul>
 
-<div class="page-break"></div>
 
 <!-- ===== 7. 기능 요구사항 ===== -->
-<h1 id="sec7">7. 기능 요구사항 (FR)</h1>
+<h1 id="sec7">7. 기능 요구사항</h1>
 
 <p>우선순위: <span class="badge must">M Must</span> 필수 &nbsp; <span class="badge should">S Should</span> 권장 &nbsp; <span class="badge could">C Could</span> 선택</p>
 
@@ -707,10 +699,9 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
 <!-- ===== 8. 비기능 요구사항 ===== -->
-<h1 id="sec8">8. 비기능 요구사항 (NFR)</h1>
+<h1 id="sec8">8. 비기능 요구사항</h1>
 
 <h3>NFR1. 성능 (Performance)</h3>
 <table>
@@ -773,14 +764,13 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
-<!-- ===== 9. 인터뷰 → FR/NFR 매핑 ===== -->
-<h1 id="sec9">9. 인터뷰 → FR/NFR 매핑</h1>
+<!-- ===== 9. 인터뷰 → 요구사항 매핑 ===== -->
+<h1 id="sec9">9. 인터뷰 → 요구사항 매핑</h1>
 
-<h3>9.1 페르소나 × 니즈 × FR/NFR 매핑</h3>
+<h3>9.1 페르소나 × 니즈 × 요구사항 매핑</h3>
 <table>
-  <thead><tr><th>페르소나</th><th>도출된 니즈</th><th>FR/NFR ID</th><th>SRS 항목명</th></tr></thead>
+  <thead><tr><th>페르소나</th><th>도출된 니즈</th><th>요구사항 ID</th><th>소프트웨어 요구사항 명세 항목</th></tr></thead>
   <tbody>
     <tr><td rowspan="5">김지원<br>(27세, IT 직장인)</td><td>"말 한마디로 음악 찾고 싶음 — 손이 바빠도 음성 한 번으로"</td><td>FR2.1, FR2.2, FR2.4</td><td>음성 녹음 / 안전 전송 / 최대 녹음 제한</td></tr>
     <tr><td>"오늘 기분에 맞는 추천 — 최근 이력 기반 아닌 현재 감정 기반"</td><td>FR3.1–3.4</td><td>EmotionClassifier / STTService / ContextAnalyzer / EmotionFusion</td></tr>
@@ -799,9 +789,9 @@ blockquote {
   </tbody>
 </table>
 
-<h3>9.2 FR/NFR 역추적 (SRS v1 → 인터뷰 출처)</h3>
+<h3>9.2 요구사항 역추적 (소프트웨어 요구사항 명세서 v1 → 인터뷰 출처)</h3>
 <table>
-  <thead><tr><th>FR/NFR ID</th><th>SRS v1 항목명</th><th>근거 페르소나</th><th>인터뷰 직접 인용</th></tr></thead>
+  <thead><tr><th>요구사항 ID</th><th>소프트웨어 요구사항 명세서 v1 항목명</th><th>근거 페르소나</th><th>인터뷰 직접 인용</th></tr></thead>
   <tbody>
     <tr><td><code>FR1.1</code></td><td>이메일/비밀번호 회원가입</td><td>박서준</td><td>"제 피드백 히스토리가 동기화돼야 의미가 있을 것 같아요"</td></tr>
     <tr><td><code>FR1.2</code></td><td>로그인 / 로그아웃</td><td>박서준</td><td>위 동일 맥락</td></tr>
@@ -824,7 +814,6 @@ blockquote {
   </tbody>
 </table>
 
-<div class="page-break"></div>
 
 <!-- ===== 10. 가정 및 제약사항 ===== -->
 <h1 id="sec10">10. 가정 및 제약사항</h1>
@@ -843,7 +832,6 @@ blockquote {
   <li>학기말 프로젝트 기간 (약 4–6주) 내에 핵심 유스케이스 (UC-03)를 시연 가능한 수준까지 구현해야 한다.</li>
 </ul>
 
-<div class="page-break"></div>
 
 <!-- ===== 부록 A ===== -->
 <h1 id="appA">부록 A. AI 시뮬레이션 로그</h1>
@@ -966,7 +954,6 @@ blockquote {
 <div class="dialogue"><span class="speaker persona">[이수민]</span> 당연하죠. 한국에서 재생 안 되는 곡을 추천 풀에 넣으면 의미가 없잖아요. 그 부분도 자동 필터링이 됐으면 해요.</div>
 </div>
 
-<div class="page-break"></div>
 
 </body>
 </html>
