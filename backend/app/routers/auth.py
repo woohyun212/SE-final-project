@@ -1,3 +1,4 @@
+import hashlib
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -20,10 +21,12 @@ from app.schemas.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 BCRYPT_ROUNDS = 12
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY 환경 변수가 설정되지 않았습니다.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_DAYS = 30
@@ -42,28 +45,40 @@ def _create_access_token(user_id: int) -> str:
     return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def _create_refresh_token(user_id: int, db: Session) -> str:
     token_str = secrets.token_urlsafe(64)
     expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    db.add(RefreshToken(user_id=user_id, token=token_str, expires_at=expires_at))
-    db.commit()
+    db.add(RefreshToken(user_id=user_id, token=_hash_token(token_str), expires_at=expires_at))
     return token_str
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    token = credentials.credentials
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 토큰이 필요합니다.")
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다.")
+        payload = jwt.decode(
+            credentials.credentials,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"require": ["exp", "sub"]},
+        )
+        user_id: str = payload["sub"]
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다.")
 
-    user = db.get(User, int(user_id))
+    try:
+        uid = int(user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다.")
+
+    user = db.get(User, uid)
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="사용자를 찾을 수 없습니다.")
     return user
@@ -76,12 +91,15 @@ def signup(body: SignupRequest, db: Session = Depends(get_db)) -> TokenResponse:
 
     user = User(email=body.email, hashed_password=_hash_password(body.password))
     db.add(user)
+    db.flush()
+
+    refresh_token = _create_refresh_token(user.id, db)
     db.commit()
     db.refresh(user)
 
     return TokenResponse(
         access_token=_create_access_token(user.id),
-        refresh_token=_create_refresh_token(user.id, db),
+        refresh_token=refresh_token,
     )
 
 
@@ -93,9 +111,12 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="비활성화된 계정입니다.")
 
+    refresh_token = _create_refresh_token(user.id, db)
+    db.commit()
+
     return TokenResponse(
         access_token=_create_access_token(user.id),
-        refresh_token=_create_refresh_token(user.id, db),
+        refresh_token=refresh_token,
     )
 
 
@@ -107,7 +128,7 @@ def logout(
 ) -> None:
     db.query(RefreshToken).filter(
         RefreshToken.user_id == current_user.id,
-        RefreshToken.token == body.refresh_token,
+        RefreshToken.token == _hash_token(body.refresh_token),
     ).delete()
     db.commit()
 
@@ -117,7 +138,7 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> AccessTokenR
     now = datetime.now(timezone.utc)
     stored = (
         db.query(RefreshToken)
-        .filter(RefreshToken.token == body.refresh_token, RefreshToken.expires_at > now)
+        .filter(RefreshToken.token == _hash_token(body.refresh_token), RefreshToken.expires_at > now)
         .first()
     )
     if stored is None:
