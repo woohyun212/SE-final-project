@@ -337,3 +337,7 @@ tmp/
 temp/
 *.bak
 *.tmp
+
+# Allow Next.js client lib (line 17 의 Python 'lib/' ignore 룰이 client/lib 까지 매칭하는 충돌 회피)
+!client/lib/
+!client/lib/**
