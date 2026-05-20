@@ -337,3 +337,8 @@ tmp/
 temp/
 *.bak
 *.tmp
+
+# ML — 데이터셋 및 학습 모델 (용량 큰 바이너리)
+ml/data/raw/
+ml/model/
+ml/.venv/
