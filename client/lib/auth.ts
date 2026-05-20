@@ -77,3 +77,92 @@ export function clearTokens(): void {
 export function isAuthenticated(): boolean {
   return getAccessToken() !== null;
 }
+
+// ── JWT expiry ─────────────────────────────────────────────────────────────
+
+/**
+ * JWT 페이로드에서 exp (Unix epoch seconds) 를 추출. 디코드 실패 시 null.
+ * 서명 검증 안 함 — 단순 base64url 디코드 + JSON parse.
+ */
+export function getAccessTokenExpiry(): number | null {
+  if (!hasWindow()) return null;
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  try {
+    // base64url → base64
+    const base64 = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(parts[1].length + ((4 - (parts[1].length % 4)) % 4), "=");
+
+    const payload: unknown = JSON.parse(atob(base64));
+
+    if (
+      payload !== null &&
+      typeof payload === "object" &&
+      "exp" in payload &&
+      typeof (payload as { exp: unknown }).exp === "number"
+    ) {
+      return (payload as { exp: number }).exp;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 현재 액세스 토큰이 만료됐는지 (또는 만료 임박 — leeway 초 이내).
+ * @param leewaySeconds 기본 30 — 만료 30초 전부터 만료로 간주 (자동 refresh 트리거용)
+ */
+export function isAccessTokenExpired(leewaySeconds = 30): boolean {
+  const exp = getAccessTokenExpiry();
+  if (exp === null) return true; // 토큰 없거나 디코드 실패 → 만료로 간주
+  return Date.now() / 1000 >= exp - leewaySeconds;
+}
+
+// ── Auto-refresh ───────────────────────────────────────────────────────────
+
+/**
+ * 현재 access_token 이 만료(또는 임박)면 refresh_token 으로 새 access_token 발급 시도.
+ * 성공 시 saveAccessToken 으로 저장.
+ * 실패 (refresh 토큰 만료/없음) 시 clearTokens 후 throw.
+ *
+ * @returns 새로운 access_token 또는 기존 유효한 access_token. 인증 안 됨이면 null.
+ */
+export async function ensureFreshAccessToken(): Promise<string | null> {
+  const current = getAccessToken();
+  if (!current) return null;
+
+  if (!isAccessTokenExpired()) return current;
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    clearTokens();
+    return null;
+  }
+
+  try {
+    // circular dependency 회피를 위한 dynamic import
+    const { refreshApi } = await import("./api");
+    const response = await refreshApi(refreshToken);
+    saveAccessToken(response);
+    return response.access_token;
+  } catch (err) {
+    clearTokens();
+    throw err;
+  }
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+
+/**
+ * 로그아웃 — localStorage 토큰 모두 제거. (라우팅은 호출자가 router.push)
+ */
+export function logout(): void {
+  clearTokens();
+}
