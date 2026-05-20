@@ -1,5 +1,6 @@
 import io
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import soundfile as sf
@@ -8,7 +9,8 @@ from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtra
 
 from train.dataset import ID2LABEL, VAD_MAP, SAMPLING_RATE, MAX_DURATION_SEC
 
-MODEL_DIR = "model/best"
+# ml/ 루트 기준 절대 경로 — 실행 위치에 무관하게 동작
+MODEL_DIR = str(Path(__file__).parent.parent / "model" / "best")
 
 
 @lru_cache(maxsize=1)

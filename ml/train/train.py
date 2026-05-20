@@ -15,7 +15,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from transformers import TrainingArguments, Trainer
 
-from train.dataset import scan_dataset, preprocess_batch, SAMPLING_RATE, MAX_DURATION_SEC
+from train.dataset import scan_dataset, preprocess_batch
 from train.model import build_model, build_extractor
 
 
@@ -72,7 +72,7 @@ def main():
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
