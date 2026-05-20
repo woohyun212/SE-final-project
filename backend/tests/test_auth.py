@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
-from app.models import token as _token_models  # noqa: F401
+import app.models  # noqa: F401
 from app.routers.auth import router
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -187,4 +187,68 @@ def test_logout_invalidates_refresh_token(client: TestClient) -> None:
 def test_logout_without_token(client: TestClient) -> None:
     tokens = _signup(client)
     res = client.post("/auth/logout", json={"refresh_token": tokens["refresh_token"]})
-    assert res.status_code == 403
+    assert res.status_code == 401
+
+
+# ── additional edge cases ─────────────────────────────────────────────────────
+
+def test_refresh_expired_token_is_rejected(client: TestClient) -> None:
+    """만료된 refresh token으로 refresh 요청 시 401을 반환해야 한다."""
+    from datetime import timedelta
+    from app.models.token import RefreshToken
+    from app.routers.auth import _hash_token
+
+    tokens = _signup(client)
+
+    db = TestingSessionLocal()
+    stored = db.query(RefreshToken).filter(
+        RefreshToken.token == _hash_token(tokens["refresh_token"])
+    ).first()
+    stored.expires_at = stored.expires_at - timedelta(days=60)
+    db.commit()
+    db.close()
+
+    res = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert res.status_code == 401
+
+
+def test_logout_already_rotated_refresh_token(client: TestClient) -> None:
+    """이미 rotation된 refresh token으로 logout해도 204(멱등성)를 반환해야 한다."""
+    tokens = _signup(client)
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+
+    res = client.post(
+        "/auth/logout",
+        json={"refresh_token": tokens["refresh_token"]},
+        headers=headers,
+    )
+    assert res.status_code == 204
+
+
+def test_get_current_user_malformed_jwt(client: TestClient) -> None:
+    """형식이 깨진 JWT로 보호된 엔드포인트 호출 시 401을 반환해야 한다."""
+    tokens = _signup(client)
+    res = client.post(
+        "/auth/logout",
+        json={"refresh_token": tokens["refresh_token"]},
+        headers={"Authorization": "Bearer not.a.valid.jwt"},
+    )
+    assert res.status_code == 401
+
+
+def test_inactive_user_cannot_login(client: TestClient) -> None:
+    """is_active=False인 사용자는 로그인 시 401을 반환해야 한다."""
+    from app.models.user import User
+
+    _signup(client)
+
+    db = TestingSessionLocal()
+    user = db.query(User).filter(User.email == "test@example.com").first()
+    user.is_active = False
+    db.commit()
+    db.close()
+
+    res = client.post("/auth/login", json={"email": "test@example.com", "password": "Password1"})
+    assert res.status_code == 401

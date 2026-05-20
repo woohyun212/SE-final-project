@@ -84,23 +84,50 @@ SE-final-project/
 > 💡 **main 에 직접 commit / push 하지 않습니다.** 모든 변경은 feature 브랜치 + PR + 리뷰 + 머지를 거쳐야 합니다.
 
 ```
-┌────────────┐    ┌──────────────┐    ┌──────────────┐    ┌────────────┐
-│  새 브랜치   │ →  │ commit       │ →  │ push + PR    │ →  │ 머지 +      │
-│  분기       │    │ (atomic)     │    │ create       │    │ 브랜치 삭제   │
-└────────────┘    └──────────────┘    └──────────────┘    └────────────┘
-   feature/X        Conventional         gh pr create        gh pr merge
-                    Commits              --base main         --merge
+┌────────────┐    ┌──────────────┐    ┌──────────────────────────┐    ┌────────────┐
+│  새 브랜치   │ →  │ commit       │ →  │ push + PR                │ →  │ 머지 +      │
+│  분기       │    │ (atomic)     │    │ → 통합 브랜치 (frontend/  │    │ 브랜치 삭제   │
+└────────────┘    └──────────────┘    │   backend) 또는 main      │    └────────────┘
+   feature/        Conventional       └──────────────────────────┘       gh pr merge
+   issue-#NN-      Commits              gh pr create
+   <comp>                               --base frontend | backend | main
 ```
+
+통합 브랜치 (`frontend`, `backend`) 는 도메인별 변경을 모은 뒤 **별도 PR 로 한 번에 main 머지** 된다. 머지 흐름 다이어그램은 §2.1 참조.
 
 ### 2. 브랜치 명명 규칙
 
-| 종류 | 패턴 | 예시 |
+#### 2.1 통합 브랜치 (영구 — main 과 함께 운영)
+
+| 통합 브랜치 | 역할 | 책임자 |
 |---|---|---|
-| 🆕 기능 | `feature/US-<번호>-<짧은-설명>` | `feature/US-3-voice-recording` |
-| 🐛 버그 | `fix/<설명>` | `fix/token-expiry-handler` |
-| 📝 문서 | `docs/<설명>` | `docs/adr-0003-redis-cache` |
-| 🔧 인프라 | `chore/<설명>` | `chore/gitignore-baseline` |
-| ♻️ 리팩터 | `refactor/<설명>` | `refactor/extract-emotion-fusion` |
+| `main` | 배포·릴리즈 기준선 | 전원 |
+| `frontend` | 클라이언트(Electron + Next.js) 작업 통합 | w00 |
+| `backend` | FastAPI · ML 등 서버측 작업 통합 | SmongsDev |
+
+머지 흐름:
+
+```
+feature/issue-#NN-front  ──►  frontend  ──►  main
+feature/issue-#NN-back   ──►  backend   ──►  main
+```
+
+이슈별 브랜치는 자기 도메인의 통합 브랜치로 PR. 통합 브랜치 → main 머지는 **스프린트 종료 시점** 또는 **인증 도메인 등 도메인 묶음 완성 시점**에 한 번에.
+
+#### 2.2 이슈/작업 브랜치
+
+| 종류 | 패턴 | 예시 | PR base |
+|---|---|---|---|
+| 🆕 기능 (이슈 단위, 도메인 분리) | `feature/issue-#<번호>-<comp>` | `feature/issue-#16-front` · `feature/issue-#17-back` | `frontend` 또는 `backend` |
+| 🆕 기능 (단순 단일 영역) | `feature/issue-#<번호>` | `feature/issue-#18` | 도메인의 통합 브랜치 |
+| 🐛 버그 | `fix/<설명>` | `fix/token-expiry-handler` | `main` (긴급) 또는 통합 |
+| 📝 문서 | `docs/<설명>` | `docs/adr-0003-redis-cache` | `main` |
+| 🔧 인프라 | `chore/<설명>` | `chore/gitignore-baseline` | `main` |
+| ♻️ 리팩터 | `refactor/<설명>` | `refactor/extract-emotion-fusion` | 통합 브랜치 |
+
+> 💡 `<comp>` 는 `front`, `back`, `ml`, `infra` 중 하나. 한 이슈가 여러 도메인을 다룰 때는 도메인별로 브랜치를 나눈다 (예: 인증 도메인 #16 은 `feature/issue-#16-front` 와 `feature/issue-#16-back` 두 개).
+>
+> ⚠ `feature/issue-#16/front` 같이 **슬래시로 sub-ref 를 만드는 형태는 불가** — git 의 ref 저장 제약(base 가 파일로 존재하면 그 하위 ref 생성 X)으로 `fatal: cannot lock ref` 에러 발생. 하이픈으로 구분한다.
 
 ### 3. 커밋 메시지 — Conventional Commits
 
