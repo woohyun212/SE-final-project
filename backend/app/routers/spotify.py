@@ -1,7 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.schemas.spotify import AudioFeatures, TrackSearchResponse
-from app.services.spotify import RateLimitError, get_audio_features, search_tracks
+from app.services.spotify import (
+    RateLimitError,
+    SpotifyCredentialsError,
+    SpotifyNotFoundError,
+    get_audio_features,
+    search_tracks,
+)
 
 router = APIRouter(prefix="/spotify", tags=["spotify"])
 
@@ -21,7 +27,7 @@ async def spotify_search(
             detail=f"Spotify rate limit — {e.retry_after}초 후 재시도하세요.",
             headers={"Retry-After": str(e.retry_after)},
         )
-    except RuntimeError as e:
+    except SpotifyCredentialsError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     return TrackSearchResponse(**result)
 
@@ -37,6 +43,8 @@ async def spotify_audio_features(track_id: str) -> AudioFeatures:
             detail=f"Spotify rate limit — {e.retry_after}초 후 재시도하세요.",
             headers={"Retry-After": str(e.retry_after)},
         )
-    except RuntimeError as e:
+    except SpotifyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="트랙을 찾을 수 없습니다.")
+    except SpotifyCredentialsError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     return AudioFeatures(**data)
