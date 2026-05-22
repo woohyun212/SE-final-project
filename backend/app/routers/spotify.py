@@ -33,10 +33,13 @@ async def spotify_search(
 
 
 @router.get("/audio-features/{track_id}", response_model=AudioFeatures)
-async def spotify_audio_features(track_id: str) -> AudioFeatures:
+async def spotify_audio_features(
+    track_id: str,
+    include_metadata: bool = Query(True, description="이름·아티스트·앨범 포함 여부 (False면 API 호출 1회 절약)"),
+) -> AudioFeatures:
     """Spotify 트랙의 audio features 조회"""
     try:
-        data = await get_audio_features(track_id)
+        data = await get_audio_features(track_id, include_metadata=include_metadata)
     except RateLimitError as e:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,

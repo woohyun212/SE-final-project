@@ -3,9 +3,10 @@ from pydantic import BaseModel
 
 class AudioFeatures(BaseModel):
     track_id: str
-    name: str
-    artists: list[str]
-    album: str
+    # include_metadata=False 로 호출 시 메타데이터 없이 반환될 수 있어 Optional
+    name: str | None = None
+    artists: list[str] | None = None
+    album: str | None = None
     duration_ms: int
     danceability: float
     energy: float

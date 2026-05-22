@@ -5,6 +5,7 @@ import logging
 from typing import TypedDict
 
 import httpx
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,55 @@ _token_lock = asyncio.Lock()
 _http_client: httpx.AsyncClient | None = None
 
 
+# ---------------------------------------------------------------------------
+# Internal Pydantic models — validate Spotify API response shapes (#9)
+# ---------------------------------------------------------------------------
+
+class _SpotifyArtist(BaseModel):
+    name: str
+
+
+class _SpotifyAlbum(BaseModel):
+    name: str
+
+
+class _SpotifyTrackItem(BaseModel):
+    id: str
+    name: str
+    artists: list[_SpotifyArtist]
+    album: _SpotifyAlbum
+    duration_ms: int
+    preview_url: str | None = None
+
+
+class _SpotifyTracksPage(BaseModel):
+    items: list[_SpotifyTrackItem]
+    total: int
+
+
+class _SpotifySearchResponse(BaseModel):
+    tracks: _SpotifyTracksPage
+
+
+class _SpotifyAudioFeatures(BaseModel):
+    danceability: float
+    energy: float
+    key: int
+    loudness: float
+    mode: int
+    speechiness: float
+    acousticness: float
+    instrumentalness: float
+    liveness: float
+    valence: float
+    tempo: float
+    duration_ms: int
+
+
+# ---------------------------------------------------------------------------
+# Exceptions
+# ---------------------------------------------------------------------------
+
 class SpotifyCredentialsError(RuntimeError):
     """Raised when Spotify API credentials are missing from environment."""
 
@@ -37,6 +87,10 @@ class RateLimitError(Exception):
         self.retry_after = retry_after
         super().__init__(f"Spotify rate limit hit — retry after {retry_after}s")
 
+
+# ---------------------------------------------------------------------------
+# HTTP client management
+# ---------------------------------------------------------------------------
 
 def _get_credentials() -> tuple[str, str]:
     client_id = os.getenv("SPOTIFY_CLIENT_ID", "")
@@ -67,8 +121,14 @@ async def close_http_client() -> None:
         _http_client = None
 
 
+# ---------------------------------------------------------------------------
+# Token management
+# ---------------------------------------------------------------------------
+
 async def _get_access_token() -> str:
     """Client Credentials Flow — token is cached until 60 s before expiry."""
+    # 자격증명을 매 호출 시 검증해 캐시 유효 중에 env가 사라져도 즉시 감지한다 (#5)
+    client_id, client_secret = _get_credentials()
     now = time.time()
     if _token_cache["access_token"] and now < _token_cache["expires_at"] - 60:
         return _token_cache["access_token"]
@@ -78,7 +138,6 @@ async def _get_access_token() -> str:
         if _token_cache["access_token"] and now < _token_cache["expires_at"] - 60:
             return _token_cache["access_token"]
 
-        client_id, client_secret = _get_credentials()
         resp = await _get_http_client().post(
             _SPOTIFY_TOKEN_URL,
             data={"grant_type": "client_credentials"},
@@ -109,55 +168,83 @@ async def _spotify_get(path: str, params: dict | None = None) -> dict:
     return resp.json()
 
 
+# ---------------------------------------------------------------------------
+# Public service functions
+# ---------------------------------------------------------------------------
+
 def _parse_track(item: dict) -> dict:
+    # Pydantic으로 파싱해 누락 키로 인한 KeyError → 500 을 방지한다 (#9)
+    track = _SpotifyTrackItem.model_validate(item)
     return {
-        "track_id": item["id"],
-        "name": item["name"],
-        "artists": [a["name"] for a in item["artists"]],
-        "album": item["album"]["name"],
-        "duration_ms": item["duration_ms"],
-        "preview_url": item.get("preview_url"),
+        "track_id": track.id,
+        "name": track.name,
+        "artists": [a.name for a in track.artists],
+        "album": track.album.name,
+        "duration_ms": track.duration_ms,
+        "preview_url": track.preview_url,
     }
 
 
 async def search_tracks(query: str, limit: int = 10, offset: int = 0) -> dict:
     """Search Spotify tracks. Returns list of track summaries + total count."""
-    data = await _spotify_get(
+    raw = await _spotify_get(
         "/search",
         params={"q": query, "type": "track", "limit": limit, "offset": offset},
     )
-    tracks_data = data["tracks"]
+    # Pydantic으로 응답 구조를 검증해 예상치 못한 형태에도 안전하게 처리 (#9)
+    parsed = _SpotifySearchResponse.model_validate(raw)
     return {
-        "tracks": [_parse_track(t) for t in tracks_data["items"]],
-        "total": tracks_data["total"],
+        "tracks": [_parse_track(t.model_dump(mode="python")) for t in parsed.tracks.items],
+        "total": parsed.tracks.total,
     }
 
 
-async def get_audio_features(track_id: str) -> dict:
-    """Fetch audio features for a single track and merge with track metadata.
+async def get_audio_features(track_id: str, include_metadata: bool = True) -> dict:
+    """Fetch audio features for a single track.
+
+    include_metadata=True(기본값)이면 /tracks/{id} 를 병렬 호출해 이름·아티스트·앨범을 병합한다.
+    False이면 /audio-features 단독 호출로 Spotify 쿼터를 절반으로 줄인다 (#8).
 
     NOTE: audio-features is deprecated for Spotify apps created after 2024-11-27.
     Verify the app predates this cutoff and holds a quota extension before deploying.
     """
-    features_data, track_data = await _fetch_features_and_track(track_id)
-    return {
+    features_raw = None
+    track_raw = None
+
+    if include_metadata:
+        features_raw, track_raw = await _fetch_features_and_track(track_id)
+    else:
+        features_raw = await _spotify_get(f"/audio-features/{track_id}")
+
+    features = _SpotifyAudioFeatures.model_validate(features_raw)
+
+    result: dict = {
         "track_id": track_id,
-        "name": track_data["name"],
-        "artists": [a["name"] for a in track_data["artists"]],
-        "album": track_data["album"]["name"],
-        "duration_ms": track_data["duration_ms"],
-        "danceability": features_data["danceability"],
-        "energy": features_data["energy"],
-        "key": features_data["key"],
-        "loudness": features_data["loudness"],
-        "mode": features_data["mode"],
-        "speechiness": features_data["speechiness"],
-        "acousticness": features_data["acousticness"],
-        "instrumentalness": features_data["instrumentalness"],
-        "liveness": features_data["liveness"],
-        "valence": features_data["valence"],
-        "tempo": features_data["tempo"],
+        "duration_ms": features.duration_ms,
+        "danceability": features.danceability,
+        "energy": features.energy,
+        "key": features.key,
+        "loudness": features.loudness,
+        "mode": features.mode,
+        "speechiness": features.speechiness,
+        "acousticness": features.acousticness,
+        "instrumentalness": features.instrumentalness,
+        "liveness": features.liveness,
+        "valence": features.valence,
+        "tempo": features.tempo,
     }
+
+    if include_metadata and track_raw is not None:
+        track = _SpotifyTrackItem.model_validate(track_raw)
+        result["name"] = track.name
+        result["artists"] = [a.name for a in track.artists]
+        result["album"] = track.album.name
+    else:
+        result["name"] = None
+        result["artists"] = None
+        result["album"] = None
+
+    return result
 
 
 async def _fetch_features_and_track(track_id: str) -> tuple[dict, dict]:
