@@ -73,13 +73,13 @@ export default function SignupPage() {
       const f = currentForm ?? form;
 
       if (name === 'email') {
-        if (!value.trim()) return '이메일을 입력해 주세요.';
+        // validateEmail (lib/validate.ts) 가 빈값을 자체 처리 — 중복 체크 제거 (PR #67 품질 3).
         const result = validateEmail(value);
         return result.ok ? '' : (result.error ?? '올바른 이메일 형식이 아닙니다.');
       }
 
       if (name === 'password') {
-        if (!value) return '비밀번호를 입력해 주세요.';
+        // validatePassword 가 빈값 자체 처리.
         const result = validatePassword(value);
         return result.ok ? '' : (result.error ?? '비밀번호 형식이 올바르지 않습니다.');
       }
@@ -115,20 +115,21 @@ export default function SignupPage() {
       setForm(nextForm);
       // Clear api error on any change
       if (apiError) setApiError('');
-      // Re-validate live once the field has been touched (error already shown)
-      if (fieldErrors[name]) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          [name]: validateField(name, value, nextForm),
-        }));
-      }
-      // Special case: re-validate confirm when password changes
-      if (name === 'password' && fieldErrors.passwordConfirm) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          passwordConfirm:
-            nextForm.passwordConfirm !== value ? '비밀번호가 일치하지 않습니다.' : '',
-        }));
+      // PR #67 Bug 1: 두 setFieldErrors 호출을 하나로 병합 (이전 prev state 가 stale 해질 수 있음).
+      const revalidateField = !!fieldErrors[name];
+      const revalidateConfirm = name === 'password' && !!fieldErrors.passwordConfirm;
+      if (revalidateField || revalidateConfirm) {
+        setFieldErrors((prev) => {
+          const next = { ...prev };
+          if (revalidateField) {
+            next[name] = validateField(name, value, nextForm);
+          }
+          if (revalidateConfirm) {
+            next.passwordConfirm =
+              nextForm.passwordConfirm !== value ? '비밀번호가 일치하지 않습니다.' : '';
+          }
+          return next;
+        });
       }
     },
     [form, fieldErrors, apiError, validateField],
@@ -137,11 +138,15 @@ export default function SignupPage() {
   const handleBlur = useCallback(
     (e: FocusEvent<HTMLInputElement>) => {
       const { name, value } = e.target as { name: keyof FormState; value: string };
-      if (!value) return; // don't nag on empty untouched fields
-      setFieldErrors((prev) => ({
-        ...prev,
-        [name]: validateField(name, value),
-      }));
+      // PR #67 품질 2: 빈 값이라도 *이미 에러가 표시되고 있던* 필드는 재검증 (UX 일관성).
+      // 처음 진입 → 즉시 blur (한 번도 검증된 적 없는 빈 필드) 만 무시.
+      setFieldErrors((prev) => {
+        if (!value && !prev[name]) return prev;
+        return {
+          ...prev,
+          [name]: validateField(name, value),
+        };
+      });
     },
     [validateField],
   );
@@ -160,7 +165,7 @@ export default function SignupPage() {
         await router.push('/');
       } catch (err: unknown) {
         // Typed API errors thrown by signupApi
-        if (isApiError(err)) {
+        if (err instanceof ApiError) {
           if (err.status === 409) {
             setApiError('이미 사용 중인 이메일입니다.');
           } else if (err.status === 422) {
@@ -341,12 +346,3 @@ export default function SignupPage() {
   );
 }
 
-/* ── Type guard for ApiError ── */
-function isApiError(err: unknown): err is ApiError {
-  return (
-    typeof err === 'object' &&
-    err !== null &&
-    typeof (err as ApiError).status === 'number' &&
-    typeof (err as ApiError).detail === 'string'
-  );
-}

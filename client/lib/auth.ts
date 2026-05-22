@@ -43,13 +43,23 @@ function storageRemove(key: string): void {
 
 // ── Public API ─────────────────────────────────────────────────────────────
 
-/** Persists both access and refresh tokens returned after login / signup. */
+/**
+ * Persists both access and refresh tokens returned after login / signup.
+ *
+ * TODO (PR #67 품질 4): `tokens.token_type` 은 현재 저장하지 않는다 — 백엔드가 항상
+ * "bearer" 를 반환하고 authedFetch 도 동일 가정하기 때문. 향후 다중 스킴(예: DPoP,
+ * MAC) 지원이 필요해지면 token_type 도 함께 저장하고 헤더 생성 시 사용해야 함.
+ */
 export function saveTokens(tokens: TokenResponse): void {
   storageSet(KEY_ACCESS_TOKEN, tokens.access_token);
   storageSet(KEY_REFRESH_TOKEN, tokens.refresh_token);
 }
 
-/** Updates only the access token (used after a token refresh). */
+/**
+ * Updates only the access token (used after a token refresh).
+ *
+ * TODO (PR #67 품질 4): saveTokens 와 동일 — `token.token_type` 미사용.
+ */
 export function saveAccessToken(token: AccessTokenResponse): void {
   storageSet(KEY_ACCESS_TOKEN, token.access_token);
 }
