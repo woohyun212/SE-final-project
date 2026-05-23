@@ -24,6 +24,17 @@ export interface AccessTokenResponse {
   token_type: string;
 }
 
+export interface Track {
+  title: string;
+  artist: string;
+  album: string;
+  duration_sec: number;
+}
+
+export interface RecommendResponse {
+  tracks: Track[];
+}
+
 // ── Error class ────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -59,7 +70,11 @@ async function apiFetch(
   const url = `${API_BASE_URL}${path}`;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    // Omit Content-Type for FormData — fetch sets the correct
+    // multipart/form-data boundary automatically.
+    ...(init.body instanceof FormData
+      ? {}
+      : { "Content-Type": "application/json" }),
     ...(init.headers as Record<string, string> | undefined),
   };
 
@@ -123,6 +138,23 @@ export async function refreshApi(
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
   return response.json() as Promise<AccessTokenResponse>;
+}
+
+/**
+ * POST /recommend with the given audio blob as multipart form.
+ * Authenticated — requires a logged-in user. Uses authedFetch so 401 triggers
+ * auto-refresh + retry (per issue #72).
+ */
+export async function recommendApi(
+  audio: Blob | File
+): Promise<RecommendResponse> {
+  const form = new FormData();
+  form.append("audio", audio);
+  const response = await authedFetch("/recommend", {
+    method: "POST",
+    body: form,
+  });
+  return response.json() as Promise<RecommendResponse>;
 }
 
 /**
