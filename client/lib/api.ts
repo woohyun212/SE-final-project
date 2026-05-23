@@ -130,6 +130,15 @@ export async function refreshApi(
  * and attaches it as a Bearer token. Falls back to unauthenticated request
  * when no token is present.
  *
+ * 401 자동 처리 (issue #72): 응답이 401 이면 `ensureFreshAccessToken(force=true)`
+ * 로 refresh 시도 후 *같은 요청을 단 1회* 재시도. 새 토큰을 얻지 못하거나 두 번째
+ * 호출도 401 이면 원본 ApiError 를 그대로 throw. 무한 루프 방지를 위해 retry 는
+ * 단일.
+ *
+ * **`init.body` 주의**: `ReadableStream` 같은 1회용 본문은 retry 호출 시 비어있어
+ * 서버가 400/422 를 반환할 수 있다. 일반 JSON 사용 (`JSON.stringify(...)` → 문자열)
+ * 케이스는 안전.
+ *
  * Import is deferred to avoid a circular-dependency at module evaluation time.
  */
 export async function authedFetch(
@@ -138,18 +147,35 @@ export async function authedFetch(
 ): Promise<Response> {
   // Dynamic import avoids a circular reference between api.ts ↔ auth.ts at
   // module load time while still keeping the dependency explicit.
-  const { getAccessToken } = await import("./auth");
-  const token = getAccessToken();
+  const { getAccessToken, ensureFreshAccessToken } = await import("./auth");
 
-  const authHeaders: Record<string, string> = token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
+  const callWith = (token: string | null): Promise<Response> =>
+    apiFetch(path, {
+      ...init,
+      headers: {
+        ...(init.headers as Record<string, string> | undefined),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
 
-  return apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init.headers as Record<string, string> | undefined),
-      ...authHeaders,
-    },
-  });
+  try {
+    return await callWith(getAccessToken());
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.status !== 401) throw err;
+
+    // 401 — 서버가 토큰을 거부. force=true 로 만료 검사를 건너뛰고 refresh 시도.
+    let newToken: string | null;
+    try {
+      newToken = await ensureFreshAccessToken(true);
+    } catch {
+      // refresh 호출 자체가 실패 (서버측 refresh token 무효). ensureFreshAccessToken
+      // 이 이미 clearTokens 처리했으므로 원본 401 을 그대로 던진다.
+      throw err;
+    }
+
+    if (!newToken) throw err;
+
+    // 단일 retry — 두 번째 호출이 또 401 을 던지면 catch 없이 그대로 전파.
+    return callWith(newToken);
+  }
 }
