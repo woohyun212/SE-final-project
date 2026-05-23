@@ -1,13 +1,16 @@
+import logging
 import os
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
-from app.models import token as _token_models  # noqa: F401 — registers RefreshToken with Base
-from app.routers import auth, spotify
+import app.models  # noqa: F401 — registers models with SQLAlchemy metadata
+from app.routers import auth, recommend, spotify
 from app.services import spotify as spotify_svc
+
+logger = logging.getLogger("app.timing")
 
 
 # Dev defaults: Next.js dev server on both common loopback hosts.
@@ -23,7 +26,6 @@ def _parse_cors_origins() -> list[str]:
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    Base.metadata.create_all(bind=engine)
     await spotify_svc.init_http_client()
     yield
     await spotify_svc.close_http_client()
@@ -44,7 +46,19 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def log_response_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    logger.info("%s %s %.1fms", request.method, request.url.path, elapsed_ms)
+    response.headers["X-Response-Time-Ms"] = f"{elapsed_ms:.1f}"
+    return response
+
+
 app.include_router(auth.router)
+app.include_router(recommend.router)
 app.include_router(spotify.router)
 
 
