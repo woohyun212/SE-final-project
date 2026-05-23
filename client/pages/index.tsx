@@ -1,49 +1,63 @@
-import { useEffect, useState } from 'react';
+/**
+ * index.tsx — 메인 화면 (로그인 필요).
+ *
+ * US-3 (이슈 #18): 메인 화면에서 음성을 녹음(VoiceCapture)하고 백엔드로 전송한다.
+ * useAuthGuard 로 비인증 사용자는 /login 으로 보낸다.
+ */
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useCallback } from 'react';
 
-interface HealthResponse {
-  message: string;
-}
+import VoiceCapture from '../components/VoiceCapture';
+import { logout } from '../lib/auth';
+import { useAuthGuard } from '../lib/useAuthGuard';
+
+import styles from '../styles/home.module.css';
+
+const FONT_URL =
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap';
 
 export default function Home() {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    fetch('http://localhost:8000/health')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        return res.json() as Promise<HealthResponse>;
-      })
-      .then((data) => setHealth(data))
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-      });
-  }, []);
+  // 로그인 필요 — 미인증/토큰 만료 시 /login 으로 리다이렉트.
+  useAuthGuard();
+
+  const handleLogout = useCallback(() => {
+    logout();
+    void router.push('/login');
+  }, [router]);
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 640, margin: '80px auto', padding: '0 24px' }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>SE Final Project</h1>
-      <p style={{ fontSize: '1.25rem', color: '#555', marginBottom: '2rem' }}>Hello World</p>
+    <>
+      <Head>
+        <title>음악 추천 — AI 감정 분석 음악 추천 시스템</title>
+        <meta name="description" content="음성으로 감정을 분석해 음악을 추천받으세요" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href={FONT_URL} rel="stylesheet" />
+        <style>{`body { font-family: 'Noto Sans KR', system-ui, sans-serif; }`}</style>
+      </Head>
 
-      <section>
-        <h2 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Backend /health</h2>
-        {health !== null && (
-          <pre style={{ background: '#f4f4f4', padding: '12px', borderRadius: '6px' }}>
-            {JSON.stringify(health, null, 2)}
-          </pre>
-        )}
-        {error !== null && (
-          <pre style={{ background: '#fff0f0', color: '#c00', padding: '12px', borderRadius: '6px' }}>
-            Error: {error}
-          </pre>
-        )}
-        {health === null && error === null && (
-          <p style={{ color: '#888' }}>백엔드 응답 대기 중…</p>
-        )}
-      </section>
-    </main>
+      <div className={styles.page}>
+        <header className={styles.topbar}>
+          <span className={styles.brand}>🎵 감정 음악 추천</span>
+          <button type="button" className={styles.logout} onClick={handleLogout}>
+            로그아웃
+          </button>
+        </header>
+
+        <main className={styles.main}>
+          <div className={styles.heading}>
+            <h1 className={styles.title}>지금 기분을 들려주세요</h1>
+            <p className={styles.subtitle}>
+              짧게 말하면 AI가 감정을 분석해 어울리는 음악을 찾아드려요.
+            </p>
+          </div>
+
+          <VoiceCapture />
+        </main>
+      </div>
+    </>
   );
 }
