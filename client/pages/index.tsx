@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+
 interface HealthResponse {
   message: string;
 }
@@ -9,7 +12,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/health')
+    fetch(`${API_BASE_URL}/health`)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
