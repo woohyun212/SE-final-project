@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session, systemPreferences } from 'electron';
 import path from 'path';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -22,7 +22,19 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (process.platform === 'darwin') {
+    await systemPreferences.askForMediaAccess('microphone');
+  }
+
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media');
+  });
+
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) =>
+    permission === 'media'
+  );
+
   createWindow();
 
   app.on('activate', () => {

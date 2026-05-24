@@ -142,13 +142,18 @@ export function isAccessTokenExpired(leewaySeconds = 30): boolean {
  * 성공 시 saveAccessToken 으로 저장.
  * 실패 (refresh 토큰 만료/없음) 시 clearTokens 후 throw.
  *
+ * @param force `true` 면 만료 검사 없이 강제로 refresh 호출. authedFetch 가 서버
+ *   401 응답을 받았을 때 (서버측 토큰 무효화 / 시계 편차 등으로 로컬 만료 검사가
+ *   현실과 어긋난 상황) 새 토큰을 얻기 위해 사용.
  * @returns 새로운 access_token 또는 기존 유효한 access_token. 인증 안 됨이면 null.
  */
-export async function ensureFreshAccessToken(): Promise<string | null> {
+export async function ensureFreshAccessToken(
+  force = false,
+): Promise<string | null> {
   const current = getAccessToken();
   if (!current) return null;
 
-  if (!isAccessTokenExpired()) return current;
+  if (!force && !isAccessTokenExpired()) return current;
 
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
