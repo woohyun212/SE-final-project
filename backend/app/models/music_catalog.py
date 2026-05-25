@@ -12,7 +12,7 @@ class MusicCatalog(Base):
     artists: Mapped[str] = mapped_column(Text, nullable=False)
     album_name: Mapped[str] = mapped_column(String(512), nullable=False)
     track_genre: Mapped[str] = mapped_column(String(128), nullable=False)
-    popularity: Mapped[int] = mapped_column(Integer, default=0)
+    popularity: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     preview_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
 

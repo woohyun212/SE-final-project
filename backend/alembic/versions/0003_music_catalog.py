@@ -40,7 +40,11 @@ def upgrade() -> None:
         sa.Column("mode", sa.Integer(), nullable=False),
         sa.Column("time_signature", sa.Integer(), nullable=False),
     )
+    op.create_index("ix_music_catalog_track_genre", "music_catalog", ["track_genre"])
+    op.create_index("ix_music_catalog_popularity", "music_catalog", ["popularity"])
 
 
 def downgrade() -> None:
+    op.drop_index("ix_music_catalog_popularity", "music_catalog")
+    op.drop_index("ix_music_catalog_track_genre", "music_catalog")
     op.drop_table("music_catalog")
