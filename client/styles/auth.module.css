@@ -1,0 +1,353 @@
+/* ─────────────────────────────────────────────────────────────
+   auth.module.css  — 회원가입 / 로그인 공용 카드 스타일
+   Design: calm "audio" card · accent line · Noto Sans KR
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS Variables (light) ── */
+.page {
+  --auth-bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --label-color: #374151;
+  --input-bg: #f9fafb;
+  --input-border: #d1d5db;
+  --input-border-focus: #1976D2;
+  --input-color: #111827;
+  --placeholder-color: #9ca3af;
+  --title-color: #0f172a;
+  --subtitle-color: #6b7280;
+  --error-color: #dc2626;
+  --error-bg: #fef2f2;
+  --error-border: #fca5a5;
+  --btn-bg: #1976D2;
+  --btn-bg-hover: #1565C0;
+  --btn-color: #ffffff;
+  --btn-disabled-bg: #93c5fd;
+  --footer-color: #6b7280;
+  --link-color: #1976D2;
+  --accent-1: #1976D2;
+  --accent-2: #42a5f5;
+  --accent-3: #90caf9;
+
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--auth-bg);
+  padding: 24px 16px;
+  /* subtle dot grid background */
+  background-image: radial-gradient(circle, #c7d8ee 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Dark mode overrides ── */
+@media (prefers-color-scheme: dark) {
+  .page {
+    --auth-bg: #0d1117;
+    --card-bg: #161b22;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 4px 32px rgba(0, 0, 0, 0.5), 0 1px 6px rgba(0, 0, 0, 0.3);
+    --label-color: #d1d5db;
+    --input-bg: #0d1117;
+    --input-border: #30363d;
+    --input-border-focus: #58a6ff;
+    --input-color: #e6edf3;
+    --placeholder-color: #484f58;
+    --title-color: #f0f6fc;
+    --subtitle-color: #8b949e;
+    --error-color: #f87171;
+    --error-bg: #2d1b1b;
+    --error-border: #7f1d1d;
+    --btn-bg: #1976D2;
+    --btn-bg-hover: #42a5f5;
+    --btn-disabled-bg: #1e3a5f;
+    --footer-color: #8b949e;
+    --link-color: #58a6ff;
+    --accent-1: #1976D2;
+    --accent-2: #42a5f5;
+    --accent-3: #90caf9;
+    background-image: radial-gradient(circle, #1e2d3d 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden; /* clips the accent line */
+  position: relative;
+}
+
+/* thin 3-stop gradient accent line at card top */
+.card::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-1) 0%,
+    var(--accent-2) 50%,
+    var(--accent-3) 100%
+  );
+}
+
+/* ── Card inner padding ── */
+.cardInner {
+  padding: 32px 36px 28px;
+}
+
+@media (max-width: 480px) {
+  .cardInner {
+    padding: 24px 20px 20px;
+  }
+}
+
+/* ── Header (icon + title) ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.iconWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+
+/* equalizer bars — animated on page load */
+.bar {
+  width: 5px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent-1));
+  animation: eq-bounce 1.4s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+.bar:nth-child(1) { height: 14px; animation-delay: 0s;    animation-duration: 1.1s; }
+.bar:nth-child(2) { height: 22px; animation-delay: 0.2s;  animation-duration: 1.4s; }
+.bar:nth-child(3) { height: 18px; animation-delay: 0.35s; animation-duration: 0.9s; }
+.bar:nth-child(4) { height: 26px; animation-delay: 0.1s;  animation-duration: 1.2s; }
+.bar:nth-child(5) { height: 12px; animation-delay: 0.45s; animation-duration: 1.5s; }
+
+@keyframes eq-bounce {
+  0%   { transform: scaleY(0.4); opacity: 0.7; }
+  100% { transform: scaleY(1.0); opacity: 1;   }
+}
+
+/* ── Title / Subtitle ── */
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--title-color);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--subtitle-color);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ── Form ── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Field (label + input + error) ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--label-color);
+  letter-spacing: 0.01em;
+}
+
+/* wrapper for focus-underline animation */
+.inputWrap {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--input-color);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.input::placeholder {
+  color: var(--placeholder-color);
+}
+
+.input:focus {
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.14);
+}
+
+/* animated underline accent on focus */
+.inputWrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: calc(100% - 2px);
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  border-radius: 0 0 8px 8px;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.inputWrap:focus-within::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.inputError {
+  border-color: var(--error-color) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.10) !important;
+}
+
+/* ── Error message ── */
+.error {
+  font-size: 0.75rem;
+  color: var(--error-color);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  line-height: 1.4;
+  animation: error-in 0.18s ease-out both;
+}
+
+@keyframes error-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* global form error (API errors) */
+.formError {
+  font-size: 0.8125rem;
+  color: var(--error-color);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+  animation: error-in 0.2s ease-out both;
+}
+
+/* ── Submit button ── */
+.submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.4);
+  transform: translateY(-1px);
+}
+
+.submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.25);
+}
+
+.submitDisabled {
+  background: var(--btn-disabled-bg) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--card-border);
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--footer-color);
+}
+
+.footerLink {
+  color: var(--link-color);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.footerLink:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* ── Card enter animation ── */
+.card {
+  animation: card-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);     }
+}
