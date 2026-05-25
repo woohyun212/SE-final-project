@@ -9,3 +9,6 @@ alembic==1.13.1
 python-multipart>=0.0.9
 python-dotenv>=1.0
 numpy>=1.26
+openai>=1.30
+faster-whisper>=1.0
+google-genai>=2.0

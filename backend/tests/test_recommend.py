@@ -1,5 +1,6 @@
 import io
 import time
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
@@ -11,6 +12,8 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 import app.models  # noqa: F401
 from app.routers.recommend import router
+from app.services.stt import get_stt_provider
+from app.services.context_analyzer import get_context_analyzer
 
 SQLITE_URL = "sqlite:///:memory:"
 
@@ -63,6 +66,19 @@ def setup_db():
     Base.metadata.drop_all(bind=engine)
 
 
+def _make_mock_stt(transcript: str = ""):
+    mock = AsyncMock()
+    mock.transcribe = AsyncMock(return_value=transcript)
+    return mock
+
+
+def _make_mock_analyzer(emotion: dict | None = None):
+    defaults = {"valence": 0.5, "energy": 0.5, "danceability": 0.5, "acousticness": 0.5, "instrumentalness": 0.5}
+    mock = AsyncMock()
+    mock.analyze = AsyncMock(return_value=emotion or defaults)
+    return mock
+
+
 @pytest.fixture
 def client():
     test_app = FastAPI()
@@ -76,6 +92,8 @@ def client():
             db.close()
 
     test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
+    test_app.dependency_overrides[get_context_analyzer] = lambda: _make_mock_analyzer()
 
     with TestClient(test_app) as c:
         yield c
@@ -152,3 +170,51 @@ def test_recommend_fewer_than_ten_returns_all(client: TestClient) -> None:
     res = client.post("/recommend", files=_audio_file())
     assert res.status_code == 200
     assert len(res.json()["tracks"]) == 5
+
+
+def test_recommend_stt_transcript_in_response() -> None:
+    """STT 변환 텍스트가 응답의 transcript 필드에 반환된다."""
+    test_app = FastAPI()
+    test_app.include_router(router)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    transcript_text = "오늘 기분이 너무 좋아"
+    test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(transcript_text)
+    test_app.dependency_overrides[get_context_analyzer] = lambda: _make_mock_analyzer()
+
+    with TestClient(test_app) as c:
+        res = c.post("/recommend", files=_audio_file())
+
+    assert res.status_code == 200
+    assert res.json()["transcript"] == transcript_text
+
+
+def test_recommend_stt_no_audio_returns_null_transcript() -> None:
+    """오디오가 비어있으면 transcript는 null이다."""
+    test_app = FastAPI()
+    test_app.include_router(router)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt("")
+    test_app.dependency_overrides[get_context_analyzer] = lambda: _make_mock_analyzer()
+
+    empty_audio = {"audio": ("empty.wav", io.BytesIO(b""), "audio/wav")}
+    with TestClient(test_app) as c:
+        res = c.post("/recommend", files=empty_audio)
+
+    assert res.status_code == 200
+    assert res.json()["transcript"] is None
