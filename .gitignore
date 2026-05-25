@@ -229,6 +229,7 @@ node_modules/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -342,3 +343,7 @@ temp/
 ml/data/raw/
 ml/model/
 ml/.venv/
+
+# Allow Next.js client lib (line 17 의 Python 'lib/' ignore 룰이 client/lib 까지 매칭하는 충돌 회피)
+!client/lib/
+!client/lib/**

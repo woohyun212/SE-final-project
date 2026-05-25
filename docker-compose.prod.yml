@@ -1,8 +1,30 @@
 services:
+  db:
+    image: postgres:16
+    container_name: se-final-project-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-se_project}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-se_project}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     image: ${BACKEND_IMAGE:-ghcr.io/woohyun212/se-final-project/backend:latest}
     container_name: se-final-project-backend
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     healthcheck:
@@ -16,4 +38,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+
+volumes:
+  postgres_prod_data:
