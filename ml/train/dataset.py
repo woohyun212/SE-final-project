@@ -1,4 +1,5 @@
 import os
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -51,6 +52,7 @@ def scan_dataset(data_dir: str) -> list[EmotionSample]:
     for label in EMOTION_LABELS:
         label_dir = os.path.join(data_dir, label)
         if not os.path.isdir(label_dir):
+            warnings.warn(f"label dir not found: {label_dir}")
             continue
         for fname in os.listdir(label_dir):
             if fname.lower().endswith((".wav", ".mp3", ".flac")):

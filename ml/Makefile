@@ -12,6 +12,9 @@ install: venv
 install-dev: venv
 	$(PIP) install -r requirements.txt -r requirements-dev.txt
 
+install-train: venv
+	$(PIP) install -r requirements-train.txt
+
 download-data:
 	bash data/download.sh
 
