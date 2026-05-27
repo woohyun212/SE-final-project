@@ -23,8 +23,12 @@ class LocalWhisperProvider:
         if self._model is None:
             from faster_whisper import WhisperModel
 
-            self._model = WhisperModel(self._model_size, device="cpu", compute_type="int8")
-            logger.info("LocalWhisperProvider: loaded model '%s'", self._model_size)
+            import ctranslate2
+            _cuda_available = ctranslate2.get_cuda_device_count() > 0
+            device = os.getenv("WHISPER_DEVICE", "cuda" if _cuda_available else "cpu")
+            compute_type = "float16" if device == "cuda" else "int8"
+            self._model = WhisperModel(self._model_size, device=device, compute_type=compute_type)
+            logger.info("LocalWhisperProvider: loaded model '%s' on %s", self._model_size, device)
 
     def _run_transcribe(self, audio_bytes: bytes) -> str:
         import io

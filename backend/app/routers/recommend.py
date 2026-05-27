@@ -35,6 +35,7 @@ async def recommend(
     if audio_bytes:
         transcript = await stt.transcribe(audio_bytes, audio.filename or "audio.wav")
 
+    # ML 서비스 장애 시 fallback 없음 — Issue #43 (US-14)에서 별도 처리 예정
     ml_result = await ml.predict(audio_bytes or b"", transcript or "")
     tracks = get_tracks_by_indices(db, ml_result.track_indices)
 

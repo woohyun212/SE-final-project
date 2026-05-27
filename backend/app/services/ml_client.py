@@ -13,7 +13,7 @@ class MLResult:
 
 class MLClient:
     def __init__(self, base_url: str | None = None):
-        self._base_url = (base_url or os.getenv("ML_SERVICE_URL", "http://localhost:8081")).rstrip("/")
+        self._base_url = (base_url or os.getenv("ML_SERVICE_URL", "http://localhost:8001")).rstrip("/")
 
     async def predict(self, audio_bytes: bytes, transcript: str) -> MLResult:
         async with httpx.AsyncClient(timeout=60.0) as client:
