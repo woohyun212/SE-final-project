@@ -1,0 +1,279 @@
+/* ─────────────────────────────────────────────────────────────
+   emotionChart.module.css — EmotionMusicChart 스타일
+   Design: calm "audio-data" aesthetic · matches recommend.module.css palette
+   Accent: #1976D2 · Page bg: #f0f4f8 · Card bg: #ffffff
+   Font: Noto Sans KR (Google Fonts, imported from parent)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS Variables (light) ── */
+.wrapper {
+  --ec-bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --title-color: #0f172a;
+  --label-color: #374151;
+  --subtitle-color: #6b7280;
+  --accent-1: #1976D2;
+  --accent-2: #42a5f5;
+  --accent-3: #90caf9;
+  --axis-color: rgba(55, 65, 81, 0.25);
+  --axis-label-color: #6b7280;
+  --grid-color: rgba(55, 65, 81, 0.07);
+  --quadrant-label-color: rgba(107, 114, 128, 0.45);
+  --tooltip-bg: #ffffff;
+  --tooltip-border: rgba(0, 0, 0, 0.09);
+  --tooltip-shadow: 0 4px 20px rgba(0, 0, 0, 0.13), 0 1px 4px rgba(0, 0, 0, 0.07);
+  --tooltip-title: #0f172a;
+  --tooltip-sub: #6b7280;
+  --tooltip-meta: #374151;
+  --error-color: #dc2626;
+  --error-bg: #fef2f2;
+  --error-border: #fca5a5;
+  --skeleton-base: #e5eaf0;
+  --skeleton-shine: #f0f4f8;
+  --star-glow: rgba(25, 118, 210, 0.22);
+  --legend-bg: rgba(240, 244, 248, 0.9);
+
+  width: 100%;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* ── Dark mode overrides ── */
+@media (prefers-color-scheme: dark) {
+  .wrapper {
+    --ec-bg: #0d1117;
+    --card-bg: #161b22;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 4px 32px rgba(0, 0, 0, 0.5), 0 1px 6px rgba(0, 0, 0, 0.3);
+    --title-color: #f0f6fc;
+    --label-color: #d1d5db;
+    --subtitle-color: #8b949e;
+    --accent-1: #1976D2;
+    --accent-2: #42a5f5;
+    --accent-3: #90caf9;
+    --axis-color: rgba(210, 220, 230, 0.2);
+    --axis-label-color: #8b949e;
+    --grid-color: rgba(255, 255, 255, 0.04);
+    --quadrant-label-color: rgba(139, 148, 158, 0.35);
+    --tooltip-bg: #21262d;
+    --tooltip-border: rgba(255, 255, 255, 0.1);
+    --tooltip-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 1px 6px rgba(0, 0, 0, 0.3);
+    --tooltip-title: #f0f6fc;
+    --tooltip-sub: #8b949e;
+    --tooltip-meta: #d1d5db;
+    --error-color: #f87171;
+    --error-bg: #2d1b1b;
+    --error-border: #7f1d1d;
+    --skeleton-base: #21262d;
+    --skeleton-shine: #30363d;
+    --star-glow: rgba(66, 165, 245, 0.28);
+    --legend-bg: rgba(22, 27, 34, 0.92);
+  }
+}
+
+/* ── Outer card wrapper ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  position: relative;
+  animation: chart-in 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* gradient accent line at card top */
+.card::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-1) 0%,
+    var(--accent-2) 50%,
+    var(--accent-3) 100%
+  );
+}
+
+@keyframes chart-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Card inner padding ── */
+.cardInner {
+  padding: 24px 24px 20px;
+}
+
+/* ── Chart area ── */
+.chartArea {
+  position: relative;
+  width: 100%;
+}
+
+/* SVG fills the area — viewBox handles the square ratio */
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ── Tooltip ── */
+.tooltip {
+  position: absolute;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 10px;
+  box-shadow: var(--tooltip-shadow);
+  padding: 10px 13px;
+  pointer-events: none;
+  min-width: 160px;
+  max-width: 220px;
+  z-index: 10;
+  /* anchor top-left to the point, offset via inline style */
+  transform-origin: top left;
+  animation: tooltip-in 0.14s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.tooltipTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--tooltip-title);
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltipArtist {
+  font-size: 0.75rem;
+  color: var(--tooltip-sub);
+  line-height: 1.3;
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltipMeta {
+  font-size: 0.6875rem;
+  color: var(--tooltip-meta);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* ── Legend ── */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  background: var(--legend-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--label-color);
+  line-height: 1;
+}
+
+/* ── Loading skeleton ── */
+.skeletonWrap {
+  position: relative;
+  width: 100%;
+  /* maintain approximate square ratio */
+  aspect-ratio: 1;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+}
+
+.skeletonPulse {
+  position: absolute;
+  inset: 0;
+  background: var(--skeleton-base);
+  background-size: 300% 100%;
+  background-image: linear-gradient(
+    90deg,
+    var(--skeleton-base) 0%,
+    var(--skeleton-shine) 40%,
+    var(--skeleton-base) 80%
+  );
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Error alert ── */
+.errorAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+  color: var(--error-color);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  animation: error-in 0.2s ease-out both;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+@keyframes error-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .cardInner {
+    padding: 16px 14px 14px;
+  }
+
+  .legend {
+    gap: 12px;
+    padding: 6px 10px;
+  }
+
+  .legendItem {
+    font-size: 0.6875rem;
+  }
+
+  .tooltip {
+    min-width: 130px;
+    padding: 8px 10px;
+  }
+
+  .tooltipTitle {
+    font-size: 0.75rem;
+  }
+
+  .tooltipArtist,
+  .tooltipMeta {
+    font-size: 0.6875rem;
+  }
+}
