@@ -1,0 +1,317 @@
+/* ─────────────────────────────────────────────────────────────
+   reasonCard.module.css — 추천 이유 카드 스타일 (#46)
+   Design: calm "audio-card" aesthetic · inherits recommend.module.css palette
+   Accent: #1976D2 · Card bg: #ffffff · Page bg: #f0f4f8
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS Variables (light) ── */
+.card {
+  --rc-card-bg: #ffffff;
+  --rc-card-border: rgba(0, 0, 0, 0.06);
+  --rc-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --rc-card-shadow-hover: 0 6px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.07);
+  --rc-title-color: #374151;
+  --rc-artist-color: #6b7280;
+  --rc-album-color: #6b7280;
+  --rc-duration-color: #9ca3af;
+  --rc-art-bg-a: #dbeafe;
+  --rc-art-bg-b: #bfdbfe;
+  --rc-art-icon: #1976D2;
+  --rc-accent: #1976D2;
+  --rc-accent-2: #42a5f5;
+  --rc-accent-3: #90caf9;
+  --rc-reason-bg: rgba(25, 118, 210, 0.05);
+  --rc-reason-border: rgba(25, 118, 210, 0.18);
+  --rc-reason-bar: #1976D2;
+  --rc-reason-text: #0f172a;
+  --rc-reason-label: #1976D2;
+  --rc-skeleton-base: #e5eaf0;
+  --rc-skeleton-shine: #f0f4f8;
+  --rc-divider: rgba(0, 0, 0, 0.05);
+  --rc-duration-bg: rgba(0, 0, 0, 0.04);
+
+  background: var(--rc-card-bg);
+  border: 1px solid var(--rc-card-border);
+  border-radius: 12px;
+  box-shadow: var(--rc-card-shadow);
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow 0.18s ease, transform 0.15s ease;
+  animation: rc-card-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* gradient accent line at top — reveals on hover */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--rc-accent) 0%,
+    var(--rc-accent-2) 50%,
+    var(--rc-accent-3) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  box-shadow: var(--rc-card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+@keyframes rc-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Dark mode overrides ── */
+@media (prefers-color-scheme: dark) {
+  .card {
+    --rc-card-bg: #161b22;
+    --rc-card-border: rgba(255, 255, 255, 0.08);
+    --rc-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --rc-card-shadow-hover: 0 6px 28px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+    --rc-title-color: #d1d5db;
+    --rc-artist-color: #8b949e;
+    --rc-album-color: #8b949e;
+    --rc-duration-color: #484f58;
+    --rc-art-bg-a: #1e2d3d;
+    --rc-art-bg-b: #1a2d4a;
+    --rc-art-icon: #58a6ff;
+    --rc-reason-bg: rgba(25, 118, 210, 0.10);
+    --rc-reason-border: rgba(88, 166, 255, 0.22);
+    --rc-reason-bar: #58a6ff;
+    --rc-reason-text: #f0f6fc;
+    --rc-reason-label: #58a6ff;
+    --rc-skeleton-base: #21262d;
+    --rc-skeleton-shine: #30363d;
+    --rc-divider: rgba(255, 255, 255, 0.05);
+    --rc-duration-bg: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* ── Track row (top section of card) ── */
+.trackRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px 12px;
+}
+
+/* ── Album art placeholder ── */
+.artPlaceholder {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--rc-art-bg-a) 0%, var(--rc-art-bg-b) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rc-art-icon);
+}
+
+/* ── Track text block ── */
+.trackInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trackTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--rc-title-color);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.trackArtist {
+  font-size: 0.8125rem;
+  color: var(--rc-artist-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.trackAlbum {
+  font-size: 0.75rem;
+  color: var(--rc-album-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+
+/* ── Duration badge ── */
+.duration {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--rc-duration-color);
+  letter-spacing: 0.01em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--rc-duration-bg);
+}
+
+/* ── Divider between track row and reason section ── */
+.divider {
+  height: 1px;
+  background: var(--rc-divider);
+  margin: 0 16px;
+}
+
+/* ── Reason callout (blockquote) ── */
+.reasonCallout {
+  margin: 0;
+  padding: 12px 16px 14px 20px;
+  display: flex;
+  gap: 12px;
+  background: var(--rc-reason-bg);
+  border: none;
+  position: relative;
+}
+
+/* left accent bar */
+.reasonCallout::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--rc-reason-bar);
+  border-radius: 0 0 0 0;
+}
+
+.reasonBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reasonLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--rc-reason-label);
+  line-height: 1;
+}
+
+.reasonText {
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--rc-reason-text);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* ── Reason skeleton (loading / reason missing) ── */
+.reasonSkeleton {
+  margin: 0;
+  padding: 12px 16px 14px 20px;
+  background: var(--rc-reason-bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reasonSkeleton::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--rc-skeleton-base);
+  border-radius: 0;
+}
+
+.skeletonLine {
+  height: 11px;
+  border-radius: 6px;
+  background: var(--rc-skeleton-base);
+  background-size: 300% 100%;
+  background-image: linear-gradient(
+    90deg,
+    var(--rc-skeleton-base) 0%,
+    var(--rc-skeleton-shine) 40%,
+    var(--rc-skeleton-base) 80%
+  );
+  animation: rc-shimmer 1.6s ease-in-out infinite;
+}
+
+.skeletonLine:nth-child(1) { width: 72%; animation-delay: 0.05s; }
+.skeletonLine:nth-child(2) { width: 55%; animation-delay: 0.12s; }
+
+@keyframes rc-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Pending placeholder text ── */
+.reasonPending {
+  font-size: 0.8125rem;
+  color: var(--rc-artist-color);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── List wrapper ── */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Responsive: compact on small screens ── */
+@media (max-width: 480px) {
+  .trackRow {
+    gap: 12px;
+    padding: 12px 12px 10px;
+  }
+
+  .artPlaceholder {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+  }
+
+  .trackTitle {
+    font-size: 0.875rem;
+  }
+
+  .reasonCallout,
+  .reasonSkeleton {
+    padding-left: 16px;
+    padding-right: 12px;
+  }
+
+  .divider {
+    margin: 0 12px;
+  }
+}

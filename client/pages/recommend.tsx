@@ -13,7 +13,10 @@ import { useCallback, useState } from 'react';
 import RecommendationVisualizer, {
   type Track as VisualizerTrack,
 } from '../components/RecommendationVisualizer';
+import EmotionMusicChart from '../components/EmotionMusicChart';
+import { RecommendationReasonList } from '../components/RecommendationReasonCard';
 import { recommendApi, ApiError } from '../lib/api';
+import { MOCK_RECOMMEND_RESULT } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
 const FONT_URL =
@@ -122,6 +125,29 @@ export default function RecommendPage() {
           loading={loading}
           error={error}
         />
+
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
+            감정-음악 매핑
+          </h2>
+          <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
+            내 감정과 추천 곡의 valence×energy 관계 (preview: mock 데이터)
+          </p>
+          <EmotionMusicChart
+            tracks={MOCK_RECOMMEND_RESULT.tracks}
+            userEmotion={MOCK_RECOMMEND_RESULT.userEmotion}
+          />
+        </section>
+
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
+            추천 이유
+          </h2>
+          <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
+            각 곡을 추천한 이유 (preview: mock 데이터)
+          </p>
+          <RecommendationReasonList tracks={MOCK_RECOMMEND_RESULT.tracks} />
+        </section>
       </main>
     </>
   );
