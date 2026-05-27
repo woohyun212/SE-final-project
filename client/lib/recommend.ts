@@ -10,6 +10,8 @@
  * 건드리지 않는다. 본 파일은 #45/#46 전용 확장 타입을 독립적으로 보유한다.
  */
 
+import type { RecommendResponse } from './api';
+
 /** 추천 트랙 — 미래 백엔드 확장 응답 기준 (#38 + audio features). */
 export interface RecommendedTrack {
   /** 백엔드 #38 Track.track_id */
@@ -131,3 +133,43 @@ export const MOCK_RECOMMEND_RESULT: RecommendResult = {
     },
   ],
 };
+
+// ── 화면 간 추천 결과 전달 (sessionStorage) ──────────────────────────────────
+//
+// `/`(녹음) → `/recommend`(표시) 로 추천 결과를 넘기기 위한 1회성 핸드오프.
+// 라우터 state 가 정적 export + 새로고침에 취약해 sessionStorage 를 사용한다.
+// 새 녹음 시 같은 키를 덮어쓰므로 명시적 clear 없이도 항상 최신값이 유지된다.
+
+const RECOMMEND_SESSION_KEY = 'se_emotion_music__recommend_result';
+
+/** 추천 결과를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
+export function saveRecommendResult(result: RecommendResponse): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(RECOMMEND_SESSION_KEY, JSON.stringify(result));
+  } catch {
+    // sessionStorage 접근 차단 시 조용히 무시 — 호출자는 저장 없이 진행.
+  }
+}
+
+/** 저장된 추천 결과 로드. 없거나 파싱 실패 시 null. */
+export function loadRecommendResult(): RecommendResponse | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(RECOMMEND_SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as RecommendResponse;
+  } catch {
+    return null;
+  }
+}
+
+/** 저장된 추천 결과 제거. */
+export function clearRecommendResult(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(RECOMMEND_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+}

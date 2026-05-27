@@ -8,7 +8,7 @@
 
 import Head from 'next/head';
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import RecommendationVisualizer, {
   type Track as VisualizerTrack,
@@ -16,7 +16,7 @@ import RecommendationVisualizer, {
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
 import { recommendApi, ApiError } from '../lib/api';
-import { MOCK_RECOMMEND_RESULT } from '../lib/recommend';
+import { MOCK_RECOMMEND_RESULT, loadRecommendResult } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
 const FONT_URL =
@@ -34,6 +34,17 @@ export default function RecommendPage() {
   const [tracks, setTracks] = useState<VisualizerTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fromVoice, setFromVoice] = useState(false);
+
+  // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드해 리스트 렌더.
+  // 직접 진입(저장값 없음)이면 기존 수동 "추천 받기" 버튼 동선을 유지.
+  useEffect(() => {
+    const stored = loadRecommendResult();
+    if (stored && stored.tracks.length > 0) {
+      setTracks(stored.tracks);
+      setFromVoice(true);
+    }
+  }, []);
 
   const handleFetch = useCallback(async () => {
     setLoading(true);
@@ -79,7 +90,9 @@ export default function RecommendPage() {
         <header style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: '1.75rem', margin: 0, color: '#0f172a' }}>추천 곡</h1>
           <p style={{ margin: '8px 0 0', color: '#6b7280', fontSize: '0.95rem' }}>
-            감정 분석 기반 추천 트랙 리스트
+            {fromVoice
+              ? '방금 녹음한 음성의 감정 분석 결과로 추천된 곡이에요.'
+              : '감정 분석 기반 추천 트랙 리스트'}
           </p>
         </header>
 
@@ -100,7 +113,7 @@ export default function RecommendPage() {
               cursor: loading ? 'progress' : 'pointer',
             }}
           >
-            {loading ? '불러오는 중…' : '추천 받기'}
+            {loading ? '불러오는 중…' : fromVoice ? '다시 추천 받기' : '추천 받기'}
           </button>
           <Link
             href="/"
