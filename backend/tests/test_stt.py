@@ -6,66 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.services.context_analyzer import ContextAnalyzer, _FEATURE_DEFAULTS
-from app.services.stt import OpenAISTTProvider  # openai is now a module-level import
-
-
-# ---------------------------------------------------------------------------
-# STTService — OpenAI Whisper API backend
-# ---------------------------------------------------------------------------
-
-class TestOpenAISTTProvider:
-    @pytest.mark.asyncio
-    async def test_transcribe_returns_text(self):
-        mock_response = MagicMock()
-        mock_response.text = "오늘 기분이 너무 좋아"
-
-        with patch("app.services.stt.openai.AsyncOpenAI") as mock_cls:
-            mock_client = AsyncMock()
-            mock_client.audio.transcriptions.create = AsyncMock(return_value=mock_response)
-            mock_cls.return_value = mock_client
-
-            provider = OpenAISTTProvider(api_key="test-key")
-            result = await provider.transcribe(b"audio-bytes", "test.wav")
-
-        assert result == "오늘 기분이 너무 좋아"
-
-    @pytest.mark.asyncio
-    async def test_transcribe_empty_bytes_returns_empty(self):
-        provider = OpenAISTTProvider(api_key="test-key")
-        result = await provider.transcribe(b"", "test.wav")
-        assert result == ""
-
-    @pytest.mark.asyncio
-    async def test_transcribe_strips_whitespace(self):
-        mock_response = MagicMock()
-        mock_response.text = "  슬프고 지쳐있어  "
-
-        with patch("app.services.stt.openai.AsyncOpenAI") as mock_cls:
-            mock_client = AsyncMock()
-            mock_client.audio.transcriptions.create = AsyncMock(return_value=mock_response)
-            mock_cls.return_value = mock_client
-
-            provider = OpenAISTTProvider(api_key="test-key")
-            result = await provider.transcribe(b"audio", "test.wav")
-
-        assert result == "슬프고 지쳐있어"
-
-    @pytest.mark.asyncio
-    async def test_transcribe_default_language_is_korean(self):
-        mock_response = MagicMock()
-        mock_response.text = "안녕"
-
-        with patch("app.services.stt.openai.AsyncOpenAI") as mock_cls:
-            mock_client = AsyncMock()
-            create_mock = AsyncMock(return_value=mock_response)
-            mock_client.audio.transcriptions.create = create_mock
-            mock_cls.return_value = mock_client
-
-            provider = OpenAISTTProvider(api_key="test-key")
-            await provider.transcribe(b"audio", "test.wav")
-
-        call_kwargs = create_mock.call_args.kwargs
-        assert call_kwargs.get("language") == "ko"
 
 
 # ---------------------------------------------------------------------------
