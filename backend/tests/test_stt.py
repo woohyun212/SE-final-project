@@ -1,90 +1,122 @@
-"""Unit tests for STTService and ContextAnalyzer (external calls are mocked)."""
+"""STT 서비스 단위 테스트 — faster-whisper 모델은 mock으로 대체."""
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-
-from app.services.context_analyzer import ContextAnalyzer, _FEATURE_DEFAULTS
+from app.services.stt import LocalWhisperProvider, STTProvider, get_stt_provider
 
 
-# ---------------------------------------------------------------------------
-# ContextAnalyzer — google-genai SDK backend
-# ---------------------------------------------------------------------------
-
-def _mock_genai_response(content: str) -> MagicMock:
-    response = MagicMock()
-    response.text = content
-    return response
+# ── 프로토콜 ──────────────────────────────────────────────────────────────────
 
 
-def _patch_genai_client(response_text: str):
-    """Returns a context manager that patches genai.Client and its async generate call."""
-    mock_client = MagicMock()
-    mock_client.aio.models.generate_content = AsyncMock(
-        return_value=_mock_genai_response(response_text)
-    )
-    return patch("app.services.context_analyzer.genai.Client", return_value=mock_client)
+def test_local_whisper_satisfies_protocol():
+    assert isinstance(LocalWhisperProvider(), STTProvider)
 
 
-class TestContextAnalyzer:
-    @pytest.mark.asyncio
-    async def test_analyze_returns_feature_vector(self):
-        payload = json.dumps({
-            "valence": 0.8,
-            "energy": 0.7,
-            "danceability": 0.6,
-            "acousticness": 0.3,
-            "instrumentalness": 0.1,
-        })
+# ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
-        with _patch_genai_client(payload):
-            analyzer = ContextAnalyzer(api_key="test-key")
-            result = await analyzer.analyze("오늘 너무 신나고 기쁘다")
 
-        assert result["valence"] == pytest.approx(0.8)
-        assert result["energy"] == pytest.approx(0.7)
-        assert set(result.keys()) == {"valence", "energy", "danceability", "acousticness", "instrumentalness"}
+def _mock_model(*texts: str) -> MagicMock:
+    """지정한 텍스트를 반환하는 WhisperModel mock 생성."""
+    segments = []
+    for t in texts:
+        seg = MagicMock()
+        seg.text = t
+        segments.append(seg)
+    model = MagicMock()
+    model.transcribe.return_value = (iter(segments), MagicMock())
+    return model
 
-    @pytest.mark.asyncio
-    async def test_analyze_empty_text_returns_defaults(self):
-        analyzer = ContextAnalyzer(api_key="test-key")
-        result = await analyzer.analyze("   ")
-        assert result == _FEATURE_DEFAULTS
 
-    @pytest.mark.asyncio
-    async def test_analyze_clamps_out_of_range_values(self):
-        payload = json.dumps({
-            "valence": 1.5,
-            "energy": -0.3,
-            "danceability": 0.5,
-            "acousticness": 0.5,
-            "instrumentalness": 0.5,
-        })
+def _provider_with_model(*texts: str) -> LocalWhisperProvider:
+    """모델이 이미 로드된 상태의 provider 반환."""
+    provider = LocalWhisperProvider()
+    provider._load_model = MagicMock()
+    provider._model = _mock_model(*texts)
+    return provider
 
-        with _patch_genai_client(payload):
-            analyzer = ContextAnalyzer(api_key="test-key")
-            result = await analyzer.analyze("극단적인 감정")
 
-        assert result["valence"] == pytest.approx(1.0)
-        assert result["energy"] == pytest.approx(0.0)
+# ── 빈 오디오 ─────────────────────────────────────────────────────────────────
 
-    @pytest.mark.asyncio
-    async def test_analyze_invalid_json_returns_defaults(self):
-        with _patch_genai_client("not valid json {{"):
-            analyzer = ContextAnalyzer(api_key="test-key")
-            result = await analyzer.analyze("아무 말이나")
 
-        assert result == _FEATURE_DEFAULTS
+async def test_empty_bytes_returns_empty_string():
+    result = await LocalWhisperProvider().transcribe(b"", "test.wav")
+    assert result == ""
 
-    @pytest.mark.asyncio
-    async def test_analyze_missing_keys_use_defaults(self):
-        payload = json.dumps({"valence": 0.9})
 
-        with _patch_genai_client(payload):
-            analyzer = ContextAnalyzer(api_key="test-key")
-            result = await analyzer.analyze("슬프다")
+# ── 정상 변환 ─────────────────────────────────────────────────────────────────
 
-        assert result["valence"] == pytest.approx(0.9)
-        assert result["energy"] == pytest.approx(0.5)   # default
-        assert result["danceability"] == pytest.approx(0.5)
+
+async def test_transcribe_joins_multiple_segments():
+    provider = _provider_with_model(" 안녕하세요 ", " 반갑습니다 ")
+    result = await provider.transcribe(b"audio", "test.wav")
+    assert result == "안녕하세요 반갑습니다"
+
+
+async def test_transcribe_strips_whitespace():
+    provider = _provider_with_model("  오늘 날씨 좋다  ")
+    result = await provider.transcribe(b"audio", "test.wav")
+    assert result == "오늘 날씨 좋다"
+
+
+async def test_transcribe_empty_segments_returns_empty():
+    provider = _provider_with_model()  # 세그먼트 없음
+    result = await provider.transcribe(b"silence", "silence.wav")
+    assert result == ""
+
+
+async def test_transcribe_calls_model_with_language():
+    provider = _provider_with_model("test")
+    await provider.transcribe(b"audio", "test.wav")
+
+    _, kwargs = provider._model.transcribe.call_args
+    assert kwargs.get("language") == "ko"
+
+
+# ── 모델 로딩 ─────────────────────────────────────────────────────────────────
+
+
+def test_model_not_loaded_at_init():
+    assert LocalWhisperProvider()._model is None
+
+
+def test_load_model_called_once(monkeypatch):
+    mock_cls = MagicMock(return_value=MagicMock())
+    monkeypatch.setattr("faster_whisper.WhisperModel", mock_cls, raising=False)
+
+    provider = LocalWhisperProvider(model_size="tiny")
+    provider._load_model()
+    provider._load_model()  # 두 번 호출해도
+
+    mock_cls.assert_called_once()  # 모델 생성은 1회
+
+
+def test_load_model_uses_correct_size(monkeypatch):
+    mock_cls = MagicMock(return_value=MagicMock())
+    monkeypatch.setattr("faster_whisper.WhisperModel", mock_cls, raising=False)
+
+    LocalWhisperProvider(model_size="medium")._load_model()
+
+    assert mock_cls.call_args[0][0] == "medium"
+
+
+# ── 싱글톤 ────────────────────────────────────────────────────────────────────
+
+
+def test_get_stt_provider_returns_same_instance(monkeypatch):
+    import app.services.stt as stt_module
+    monkeypatch.setattr(stt_module, "_provider", None)
+
+    assert get_stt_provider() is get_stt_provider()
+
+
+def test_get_stt_provider_respects_env_var(monkeypatch):
+    import app.services.stt as stt_module
+    monkeypatch.setattr(stt_module, "_provider", None)
+    monkeypatch.setenv("WHISPER_MODEL_SIZE", "base")
+
+    provider = get_stt_provider()
+
+    assert isinstance(provider, LocalWhisperProvider)
+    assert provider._model_size == "base"
+
+    monkeypatch.setattr(stt_module, "_provider", None)

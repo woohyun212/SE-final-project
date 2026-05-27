@@ -13,3 +13,4 @@ class Track(BaseModel):
 class RecommendResponse(BaseModel):
     tracks: list[Track]
     transcript: str | None = None
+    emotions: dict[str, float] | None = None
