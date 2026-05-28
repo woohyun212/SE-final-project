@@ -110,16 +110,14 @@ def test_recommend_response_time(client: TestClient) -> None:
     assert elapsed < 3.0, f"응답 시간 초과: {elapsed:.3f}s"
 
 
-def test_recommend_with_emotion_params(client: TestClient) -> None:
+def test_recommend_with_vad_params(client: TestClient) -> None:
     res = client.post(
         "/recommend",
         files=_audio_file(),
         data={
-            "valence": "0.9",
-            "energy": "0.8",
-            "danceability": "0.7",
-            "acousticness": "0.1",
-            "instrumentalness": "0.0",
+            "vad_valence": "0.8",
+            "vad_arousal": "0.6",
+            "vad_dominance": "0.5",
         },
     )
     assert res.status_code == 200
