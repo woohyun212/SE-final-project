@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.music_catalog import MusicCatalog
 from app.schemas.recommend import RecommendResponse, Track
+from app.schemas.context import ContextResult
+from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
+from app.services.emotion_fusion import fuse
 from app.services.recommendation import recommend_by_emotion
 
 router = APIRouter(prefix="/recommend", tags=["recommend"])
@@ -23,19 +26,17 @@ def _to_track(catalog: MusicCatalog) -> Track:
 @router.post("", response_model=RecommendResponse)
 async def recommend(
     audio: UploadFile,
-    valence: float = Form(default=0.5),
-    energy: float = Form(default=0.5),
-    danceability: float = Form(default=0.5),
-    acousticness: float = Form(default=0.5),
-    instrumentalness: float = Form(default=0.5),
+    transcript: str | None = Form(default=None),
+    vad_valence: float = Form(default=0.0),
+    vad_arousal: float = Form(default=0.0),
+    vad_dominance: float = Form(default=0.0),
     db: Session = Depends(get_db),
+    analyzer: ContextAnalyzer | None = Depends(get_context_analyzer),
 ) -> RecommendResponse:
-    emotion_vector = {
-        "valence": valence,
-        "energy": energy,
-        "danceability": danceability,
-        "acousticness": acousticness,
-        "instrumentalness": instrumentalness,
-    }
+    context: ContextResult | None = None
+    if transcript and analyzer is not None:
+        context = await analyzer.analyze(transcript)
+
+    emotion_vector = fuse(vad_valence, vad_arousal, vad_dominance, context)
     tracks = recommend_by_emotion(db, emotion_vector)
-    return RecommendResponse(tracks=[_to_track(t) for t in tracks])
+    return RecommendResponse(tracks=[_to_track(t) for t in tracks], context=context)
