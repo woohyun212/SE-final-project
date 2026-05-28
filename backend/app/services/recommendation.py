@@ -35,7 +35,6 @@ def recommend_by_emotion(
             sims = np.where(row_norms == 0.0, 0.0, dot / (row_norms * query_norm))
 
     # argpartition으로 top-k 추출 (전체 정렬보다 O(N) 수준)
-    # k == len(sims)이면 argpartition이 전체 배열을 대상으로 하므로 argsort로 직접 처리
     k = min(top_k, len(sims))
     if k == len(sims):
         top_indices = np.argsort(sims)[::-1]

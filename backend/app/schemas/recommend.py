@@ -14,4 +14,5 @@ class Track(BaseModel):
 
 class RecommendResponse(BaseModel):
     tracks: list[Track]
+    transcript: str | None = None
     context: ContextResult | None = None
