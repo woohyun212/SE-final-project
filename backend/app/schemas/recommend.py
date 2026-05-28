@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.services.context_analyzer import ContextResult
+from app.schemas.context import ContextResult
 
 
 class Track(BaseModel):

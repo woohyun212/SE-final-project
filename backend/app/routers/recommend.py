@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.music_catalog import MusicCatalog
 from app.schemas.recommend import RecommendResponse, Track
-from app.services.context_analyzer import ContextAnalyzer, ContextResult, get_context_analyzer
+from app.schemas.context import ContextResult
+from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
 from app.services.recommendation import recommend_by_emotion
 
 router = APIRouter(prefix="/recommend", tags=["recommend"])

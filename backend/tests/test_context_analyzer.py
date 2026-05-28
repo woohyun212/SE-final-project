@@ -1,12 +1,15 @@
 """
-ContextAnalyzer 테스트 — 실제 Gemini API 호출 (GEMINI_API_KEY 필수)
+ContextAnalyzer 테스트
 
-ContextResult 검증 테스트는 API 키 없이도 동작하나,
-analyzer를 사용하는 모든 테스트는 실제 Gemini API를 호출합니다.
+- ContextResult 검증 테스트: API 키 없이 동작
+- mock 기반 파싱 테스트: API 키 없이 동작 (결정적 커버리지)
+- @pytest.mark.live 테스트: GEMINI_API_KEY 필수, 실제 Gemini API 호출
 """
 
+import asyncio
 import io
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from dotenv import load_dotenv
@@ -23,7 +26,8 @@ import app.models  # noqa: F401
 from app.database import Base, get_db
 from app.models.music_catalog import MusicCatalog
 from app.routers.recommend import router
-from app.services.context_analyzer import ContextAnalyzer, ContextResult, get_context_analyzer
+from app.schemas.context import ContextResult
+from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
 
 # ---------------------------------------------------------------------------
 # DB fixture
@@ -72,7 +76,7 @@ def setup_db():
 
 
 # ---------------------------------------------------------------------------
-# Analyzer fixture — GEMINI_API_KEY 없으면 skip
+# Fixtures
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -82,6 +86,18 @@ def analyzer():
         pytest.skip("GEMINI_API_KEY 미설정 — 실제 API 테스트 skip")
     model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-lite")
     return ContextAnalyzer(api_key=api_key, model_name=model)
+
+
+@pytest.fixture
+def mock_analyzer():
+    with patch("app.services.context_analyzer.genai.Client"):
+        yield ContextAnalyzer(api_key="fake-key")
+
+
+def _resp(text: str) -> MagicMock:
+    r = MagicMock()
+    r.text = text
+    return r
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +141,15 @@ def test_context_result_tolerates_non_numeric_emotion_score():
     assert r.emotions == {"calm": 0.6}
 
 
+def test_context_result_caps_emotions_at_three():
+    r = ContextResult(emotions={"happy": 0.5, "sad": 0.3, "calm": 0.1, "angry": 0.1})
+    assert r.emotions is not None
+    assert len(r.emotions) == 3
+    assert "happy" in r.emotions
+    assert "sad" in r.emotions
+    assert "calm" in r.emotions
+
+
 def test_get_context_analyzer_returns_none_without_key(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     import app.services.context_analyzer as mod
@@ -133,14 +158,63 @@ def test_get_context_analyzer_returns_none_without_key(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# ContextAnalyzer — 실제 Gemini API 호출
+# ContextAnalyzer — mock 기반 파싱 로직 (API 키 불필요, 결정적)
 # ---------------------------------------------------------------------------
 
-async def test_analyze_empty_text_returns_empty(analyzer):
-    result = await analyzer.analyze("")
+async def test_analyze_empty_text_returns_empty_without_api(mock_analyzer):
+    result = await mock_analyzer.analyze("")
     assert result == ContextResult()
 
 
+async def test_analyze_parses_clean_json(mock_analyzer):
+    mock_analyzer._client.aio.models.generate_content = AsyncMock(
+        return_value=_resp('{"time_of_day": "evening", "location": "home", "activity": "relaxing", "emotions": {"calm": 0.6, "melancholic": 0.4}}')
+    )
+    result = await mock_analyzer.analyze("test")
+    assert result.time_of_day == "evening"
+    assert result.location == "home"
+    assert result.activity == "relaxing"
+    assert result.emotions == {"calm": 0.6, "melancholic": 0.4}
+
+
+async def test_analyze_parses_markdown_fence(mock_analyzer):
+    mock_analyzer._client.aio.models.generate_content = AsyncMock(
+        return_value=_resp('```json\n{"time_of_day": "morning", "location": null, "activity": null, "emotions": null}\n```')
+    )
+    result = await mock_analyzer.analyze("test")
+    assert result.time_of_day == "morning"
+    assert result.location is None
+
+
+async def test_analyze_malformed_response_returns_empty(mock_analyzer):
+    mock_analyzer._client.aio.models.generate_content = AsyncMock(
+        return_value=_resp("not valid json at all")
+    )
+    result = await mock_analyzer.analyze("test")
+    assert result == ContextResult()
+
+
+async def test_analyze_timeout_returns_empty(mock_analyzer):
+    mock_analyzer._client.aio.models.generate_content = AsyncMock(
+        side_effect=asyncio.TimeoutError
+    )
+    result = await mock_analyzer.analyze("test")
+    assert result == ContextResult()
+
+
+async def test_analyze_api_error_returns_empty(mock_analyzer):
+    mock_analyzer._client.aio.models.generate_content = AsyncMock(
+        side_effect=RuntimeError("API quota exceeded")
+    )
+    result = await mock_analyzer.analyze("test")
+    assert result == ContextResult()
+
+
+# ---------------------------------------------------------------------------
+# ContextAnalyzer — 실제 Gemini API 호출 (GEMINI_API_KEY 필수)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.live
 async def test_analyze_commuting(analyzer):
     text = "지하철 타고 출근 중이야, 사람 많고 피곤해"
     result = await analyzer.analyze(text)
@@ -150,6 +224,7 @@ async def test_analyze_commuting(analyzer):
     assert result.activity == "commuting"
 
 
+@pytest.mark.live
 async def test_analyze_home_evening(analyzer):
     text = "집에서 저녁에 음악 들으며 쉬고 있어"
     result = await analyzer.analyze(text)
@@ -160,6 +235,7 @@ async def test_analyze_home_evening(analyzer):
     assert result.activity == "relaxing"
 
 
+@pytest.mark.live
 async def test_analyze_gym_workout(analyzer):
     text = "헬스장에서 운동 중이야, 기분 너무 좋다!"
     result = await analyzer.analyze(text)
@@ -169,6 +245,7 @@ async def test_analyze_gym_workout(analyzer):
     assert result.activity == "exercising"
 
 
+@pytest.mark.live
 async def test_analyze_study_cafe(analyzer):
     text = "카페에서 시험 공부 중, 집중이 안 된다"
     result = await analyzer.analyze(text)
@@ -178,6 +255,7 @@ async def test_analyze_study_cafe(analyzer):
     assert result.activity == "studying"
 
 
+@pytest.mark.live
 async def test_analyze_emotions_are_valid_schema(analyzer):
     text = "요즘 너무 불안하고 우울해, 아무것도 하기 싫어"
     result = await analyzer.analyze(text)
@@ -190,6 +268,7 @@ async def test_analyze_emotions_are_valid_schema(analyzer):
             assert 0.0 <= score <= 1.0, f"score 범위 초과: {score}"
 
 
+@pytest.mark.live
 async def test_analyze_returns_valid_context_result_type(analyzer):
     result = await analyzer.analyze("오늘 재택근무 중, 점심 먹고 졸리다")
     print(f"\n[결과] {result}")
@@ -222,6 +301,7 @@ def _make_client(analyzer_instance) -> TestClient:
     return TestClient(test_app)
 
 
+@pytest.mark.live
 def test_recommend_returns_context_with_transcript(analyzer):
     client = _make_client(analyzer)
     res = client.post(
