@@ -28,6 +28,8 @@ from app.models.music_catalog import MusicCatalog
 from app.routers.recommend import router
 from app.schemas.context import ContextResult
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
+from app.services.ml_client import VADResult, get_ml_client
+from app.services.stt import get_stt_provider
 
 # ---------------------------------------------------------------------------
 # DB fixture
@@ -285,7 +287,19 @@ async def test_analyze_returns_valid_context_result_type(analyzer):
 # /recommend 엔드포인트 — 실제 API 연동
 # ---------------------------------------------------------------------------
 
-def _make_client(analyzer_instance) -> TestClient:
+def _make_mock_stt(transcript: str = ""):
+    mock = MagicMock()
+    mock.transcribe = AsyncMock(return_value=transcript)
+    return mock
+
+
+def _make_mock_ml():
+    mock = MagicMock()
+    mock.predict = AsyncMock(return_value=VADResult(valence=0.0, arousal=0.0, dominance=0.0))
+    return mock
+
+
+def _make_client(analyzer_instance, stt_transcript: str = "") -> TestClient:
     test_app = FastAPI()
     test_app.include_router(router)
 
@@ -298,17 +312,16 @@ def _make_client(analyzer_instance) -> TestClient:
 
     test_app.dependency_overrides[get_db] = override_db
     test_app.dependency_overrides[get_context_analyzer] = lambda: analyzer_instance
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(stt_transcript)
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
     return TestClient(test_app)
 
 
 @pytest.mark.live
 def test_recommend_returns_context_with_transcript(analyzer):
-    client = _make_client(analyzer)
-    res = client.post(
-        "/recommend",
-        files={"audio": ("t.wav", io.BytesIO(b"x"), "audio/wav")},
-        data={"transcript": "집에서 저녁에 음악 들으며 쉬고 있어"},
-    )
+    transcript = "집에서 저녁에 음악 들으며 쉬고 있어"
+    client = _make_client(analyzer, stt_transcript=transcript)
+    res = client.post("/recommend", files={"audio": ("t.wav", io.BytesIO(b"x"), "audio/wav")})
     assert res.status_code == 200
     ctx = res.json().get("context")
     assert ctx is not None
@@ -316,7 +329,7 @@ def test_recommend_returns_context_with_transcript(analyzer):
 
 
 def test_recommend_context_null_without_transcript():
-    client = _make_client(None)
+    client = _make_client(None, stt_transcript="")
     res = client.post("/recommend", files={"audio": ("t.wav", io.BytesIO(b"x"), "audio/wav")})
     assert res.status_code == 200
     assert res.json().get("context") is None
