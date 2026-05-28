@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from pathlib import Path
 
 from google import genai
@@ -20,7 +21,7 @@ class ContextResult(BaseModel):
     time_of_day: str | None = None
     location: str | None = None
     activity: str | None = None
-    emotions: dict | None = None
+    emotions: dict[str, float] | None = None
 
     @field_validator("time_of_day")
     @classmethod
@@ -58,6 +59,8 @@ class ContextResult(BaseModel):
                 continue
             if 0.0 <= f <= 1.0:
                 cleaned[k] = f
+        if len(cleaned) > 3:
+            cleaned = dict(sorted(cleaned.items(), key=lambda x: x[1], reverse=True)[:3])
         return cleaned or None
 
 
@@ -85,11 +88,9 @@ class ContextAnalyzer:
                 contents=prompt,
             )
             raw = response.text.strip()
-            # strip accidental markdown fences
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
+            match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw)
+            if match:
+                raw = match.group(1)
             data = json.loads(raw)
             return ContextResult.model_validate(data)
         except Exception as exc:
@@ -108,5 +109,9 @@ def get_context_analyzer() -> ContextAnalyzer | None:
     if not api_key:
         logger.info("GEMINI_API_KEY not set — ContextAnalyzer disabled")
         return None
-    _analyzer = ContextAnalyzer()
+    try:
+        _analyzer = ContextAnalyzer()
+    except Exception as exc:
+        logger.error("ContextAnalyzer init failed: %s", exc)
+        return None
     return _analyzer

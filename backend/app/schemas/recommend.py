@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.services.context_analyzer import ContextResult  # noqa: F401 — re-exported for API layer
+from app.services.context_analyzer import ContextResult
 
 
 class Track(BaseModel):
