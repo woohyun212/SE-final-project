@@ -2,7 +2,10 @@ import logging
 import os
 import time
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 
 import app.models  # noqa: F401 — registers models with SQLAlchemy metadata

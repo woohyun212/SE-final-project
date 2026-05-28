@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.services.context_analyzer import ContextResult  # noqa: F401 — re-exported for API layer
+
 
 class Track(BaseModel):
     track_id: str
@@ -12,3 +14,4 @@ class Track(BaseModel):
 
 class RecommendResponse(BaseModel):
     tracks: list[Track]
+    context: ContextResult | None = None
