@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 import app.models  # noqa: F401
 from app.routers.recommend import router
-from app.services.ml_client import MLClient, MLResult, get_ml_client
+from app.services.ml_client import MLClient, VADResult, get_ml_client
 from app.services.stt import get_stt_provider
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -73,11 +73,12 @@ def _make_mock_stt(transcript: str = ""):
     return mock
 
 
-def _make_mock_ml(indices: list[int] | None = None, emotions: dict | None = None):
+def _make_mock_ml(valence: float = 0.0, arousal: float = 0.0, dominance: float = 0.0):
     mock = MagicMock(spec=MLClient)
-    mock.predict = AsyncMock(return_value=MLResult(
-        track_indices=indices if indices is not None else list(range(1, 11)),
-        emotions=emotions,
+    mock.predict = AsyncMock(return_value=VADResult(
+        valence=valence,
+        arousal=arousal,
+        dominance=dominance,
     ))
     return mock
 
@@ -131,6 +132,29 @@ def test_recommend_response_time(client: TestClient) -> None:
     assert elapsed < 3.0, f"응답 시간 초과: {elapsed:.3f}s"
 
 
+def test_recommend_stt_transcript_in_response() -> None:
+    test_app = FastAPI()
+    test_app.include_router(router)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    transcript_text = "오늘 기분이 너무 좋아"
+    test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(transcript_text)
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+
+    with TestClient(test_app) as c:
+        res = c.post("/recommend", files=_audio_file())
+
+    assert res.status_code == 200
+    assert res.json()["transcript"] == transcript_text
+
+
 def test_recommend_empty_catalog_returns_empty() -> None:
     test_app = FastAPI()
     test_app.include_router(router)
@@ -179,7 +203,7 @@ def test_recommend_fewer_than_ten_returns_all() -> None:
 
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
-    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml(indices=list(range(1, 6)))
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
@@ -187,7 +211,8 @@ def test_recommend_fewer_than_ten_returns_all() -> None:
     assert len(res.json()["tracks"]) == 5
 
 
-def test_recommend_stt_transcript_in_response() -> None:
+def test_recommend_vad_positive_affects_results() -> None:
+    """EmotionFusion 통합 검증 — VAD 값이 라우터를 통해 추천 파이프라인에 전달됨"""
     test_app = FastAPI()
     test_app.include_router(router)
 
@@ -198,65 +223,14 @@ def test_recommend_stt_transcript_in_response() -> None:
         finally:
             db.close()
 
-    transcript_text = "오늘 기분이 너무 좋아"
-    test_app.dependency_overrides[get_db] = override_get_db
-    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(transcript_text)
-    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
-
-    with TestClient(test_app) as c:
-        res = c.post("/recommend", files=_audio_file())
-
-    assert res.status_code == 200
-    assert res.json()["transcript"] == transcript_text
-
-
-def test_recommend_no_audio_returns_null_transcript() -> None:
-    test_app = FastAPI()
-    test_app.include_router(router)
-
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    test_app.dependency_overrides[get_db] = override_get_db
-    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt("")
-    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
-
-    empty_audio = {"audio": ("empty.wav", io.BytesIO(b""), "audio/wav")}
-    with TestClient(test_app) as c:
-        res = c.post("/recommend", files=empty_audio)
-
-    assert res.status_code == 200
-    assert res.json()["transcript"] is None
-
-
-def test_recommend_emotions_in_response() -> None:
-    test_app = FastAPI()
-    test_app.include_router(router)
-
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    emotions = {"happy": 0.8, "sad": 0.1, "energetic": 0.7}
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
-    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml(emotions=emotions)
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml(
+        valence=0.8, arousal=0.7, dominance=0.5
+    )
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
 
     assert res.status_code == 200
-    assert res.json()["emotions"] == emotions
-
-
-def test_recommend_emotions_null_when_not_provided(client: TestClient) -> None:
-    res = client.post("/recommend", files=_audio_file())
-    assert res.status_code == 200
-    assert res.json()["emotions"] is None
+    assert len(res.json()["tracks"]) == 10

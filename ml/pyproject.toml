@@ -1,8 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-asyncio_mode = "auto"
-markers = ["live: requires real Gemini API — run with -m live (opt-in)"]
 
 [tool.ruff]
 line-length = 100

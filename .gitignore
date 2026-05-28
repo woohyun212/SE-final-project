@@ -229,6 +229,7 @@ node_modules/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -331,9 +332,22 @@ logs/
 
 # oh-my-claudecode runtime state
 .omc/
+.claude/
 
 # Misc temp
 tmp/
 temp/
 *.bak
 *.tmp
+
+# ML — 데이터셋 및 학습 모델 (용량 큰 바이너리)
+ml/data/raw/
+ml/model/
+ml/.venv/
+
+# Audio files
+*.wav
+
+# Allow Next.js client lib (line 17 의 Python 'lib/' ignore 룰이 client/lib 까지 매칭하는 충돌 회피)
+!client/lib/
+!client/lib/**
