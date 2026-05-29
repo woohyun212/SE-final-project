@@ -16,7 +16,11 @@ import RecommendationVisualizer, {
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
 import { recommendApi, ApiError } from '../lib/api';
-import { MOCK_RECOMMEND_RESULT, loadRecommendResult } from '../lib/recommend';
+import {
+  MOCK_RECOMMEND_RESULT,
+  loadRecommendResult,
+  clearRecommendResult,
+} from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
 const FONT_URL =
@@ -37,16 +41,19 @@ export default function RecommendPage() {
   const [fromVoice, setFromVoice] = useState(false);
 
   // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드해 리스트 렌더.
-  // 직접 진입(저장값 없음)이면 기존 수동 "추천 받기" 버튼 동선을 유지.
+  // 1회성 핸드오프 — 로드 직후 클리어해, 재녹음 없이 /recommend 재진입 시
+  // 옛 결과가 다시 뜨지 않도록 한다. 직접 진입(저장값 없음)이면 수동 버튼 동선 유지.
   useEffect(() => {
     const stored = loadRecommendResult();
     if (stored && stored.tracks.length > 0) {
       setTracks(stored.tracks);
       setFromVoice(true);
+      clearRecommendResult();
     }
   }, []);
 
   const handleFetch = useCallback(async () => {
+    setFromVoice(false); // 수동 재요청 — 출처를 '음성'에서 전환
     setLoading(true);
     setError(null);
     try {
