@@ -9,7 +9,9 @@ import { useRouter } from 'next/router';
 import { useCallback } from 'react';
 
 import VoiceCapture from '../components/VoiceCapture';
+import type { RecommendResponse } from '../lib/api';
 import { logout } from '../lib/auth';
+import { saveRecommendResult } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
 import styles from '../styles/home.module.css';
@@ -27,6 +29,15 @@ export default function Home() {
     logout();
     void router.push('/login');
   }, [router]);
+
+  // 녹음 → 추천 성공 시 결과를 저장하고 추천 화면으로 이동.
+  const handleResult = useCallback(
+    (result: RecommendResponse) => {
+      saveRecommendResult(result);
+      void router.push('/recommend');
+    },
+    [router],
+  );
 
   return (
     <>
@@ -55,7 +66,7 @@ export default function Home() {
             </p>
           </div>
 
-          <VoiceCapture />
+          <VoiceCapture onResult={handleResult} />
         </main>
       </div>
     </>
