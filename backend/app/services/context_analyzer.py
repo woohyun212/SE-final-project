@@ -25,7 +25,7 @@ class ContextAnalyzer:
         if not key:
             raise ValueError("GEMINI_API_KEY is not set")
         self._client = genai.Client(api_key=key)
-        self._model_name = model_name or os.getenv("GEMINI_MODEL", "gemini-2.0-flash-lite")
+        self._model_name = model_name or os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
         self._prompt_template = _load_prompt_template()
 
     async def analyze(self, text: str) -> ContextResult:
