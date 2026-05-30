@@ -11,7 +11,7 @@ def recommend_by_emotion(
     db: Session,
     emotion_vector: dict[str, float],
     top_k: int = 10,
-) -> list[MusicCatalog]:
+) -> list[tuple[MusicCatalog, float]]:
     query_vec = np.array([emotion_vector.get(f, 0.5) for f in _FEATURE_COLS], dtype=np.float32)
 
     # audio features 컬럼과 track_id만 조회 — ORM 객체 전체 로드 불필요
@@ -43,7 +43,12 @@ def recommend_by_emotion(
         top_indices = top_indices[np.argsort(sims[top_indices])[::-1]]
 
     top_ids = [track_ids[i] for i in top_indices]
+    top_scores = [float(sims[i]) for i in top_indices]
 
     # top-k track_id로만 ORM 객체 재조회
     result_map = {r.track_id: r for r in db.query(MusicCatalog).filter(MusicCatalog.track_id.in_(top_ids)).all()}
-    return [result_map[tid] for tid in top_ids if tid in result_map]
+    return [
+        (result_map[tid], score)
+        for tid, score in zip(top_ids, top_scores)
+        if tid in result_map
+    ]
