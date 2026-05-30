@@ -49,6 +49,6 @@ def recommend_by_emotion(
     result_map = {r.track_id: r for r in db.query(MusicCatalog).filter(MusicCatalog.track_id.in_(top_ids)).all()}
     return [
         (result_map[tid], score)
-        for tid, score in zip(top_ids, top_scores)
+        for tid, score in zip(top_ids, top_scores, strict=True)
         if tid in result_map
     ]

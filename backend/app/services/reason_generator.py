@@ -90,7 +90,7 @@ class ReasonGenerator:
             data = json.loads(raw)
             valid_ids = {t.track_id for t in tracks}
             return {k: str(v) for k, v in data.items() if k in valid_ids}
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("ReasonGenerator timed out after %.1fs", _REASON_TIMEOUT)
             return {}
         except Exception as exc:

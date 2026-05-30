@@ -5,13 +5,13 @@ from app.database import get_db
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
 from app.routers.auth import get_current_user
+from app.schemas.context import ContextResult
 from app.schemas.recommend import (
     EmotionVector,
     RecommendationItem,
     RecommendResponse,
     TrackInfo,
 )
-from app.schemas.context import ContextResult
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
 from app.services.emotion_fusion import fuse
 from app.services.ml_client import MLClient, get_ml_client

@@ -5,8 +5,17 @@ asyncio_mode = "auto"
 markers = ["live: requires real Gemini API — run with -m live (opt-in)"]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "B008",   # FastAPI Depends()/Query() 기본값은 관용 패턴
+    "UP042",  # str+Enum → StrEnum 전환은 Pydantic 직렬화 변경 위험, 의도적 유지
+]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["E501"]  # 마이그레이션 컬럼 정의 라인
+"tests/*" = ["E501", "E402"]     # 테스트 데이터 길이 + load_dotenv() 선행 패턴
+"scripts/*" = ["E501"]           # 데이터 적재 스크립트

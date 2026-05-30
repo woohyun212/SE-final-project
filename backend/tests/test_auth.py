@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.database import Base, get_db
 import app.models  # noqa: F401
+from app.database import Base, get_db
 from app.routers.auth import router
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -195,6 +195,7 @@ def test_logout_without_token(client: TestClient) -> None:
 def test_refresh_expired_token_is_rejected(client: TestClient) -> None:
     """만료된 refresh token으로 refresh 요청 시 401을 반환해야 한다."""
     from datetime import timedelta
+
     from app.models.token import RefreshToken
     from app.routers.auth import _hash_token
 
