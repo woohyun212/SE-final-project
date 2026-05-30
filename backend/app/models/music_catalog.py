@@ -8,6 +8,8 @@ class MusicCatalog(Base):
     __tablename__ = "music_catalog"
 
     track_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # ML 인덱스 매핑용 — 프로덕션은 SERIAL(migration 0004)이 자동 할당
+    id: Mapped[int | None] = mapped_column(Integer, unique=True, index=True)
     track_name: Mapped[str] = mapped_column(String(512), nullable=False)
     artists: Mapped[str] = mapped_column(Text, nullable=False)
     album_name: Mapped[str] = mapped_column(String(512), nullable=False)
