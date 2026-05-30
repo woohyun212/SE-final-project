@@ -1,10 +1,10 @@
-import uuid
-
 from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.music_catalog import MusicCatalog
+from app.models.recommendation import RecommendationSession
+from app.routers.auth import get_current_user
 from app.schemas.recommend import (
     EmotionVector,
     RecommendationItem,
@@ -53,6 +53,7 @@ async def recommend(
     ml: MLClient = Depends(get_ml_client),
     analyzer: ContextAnalyzer | None = Depends(get_context_analyzer),
     reason_gen: ReasonGenerator | None = Depends(get_reason_generator),
+    current_user=Depends(get_current_user),
 ) -> RecommendResponse:
     audio_bytes = await audio.read()
 
@@ -86,11 +87,17 @@ async def recommend(
             context,
         )
 
-    # 이번 /recommend 호출에 대한 임시 세션 ID (Step 2에서 DB 세션으로 교체)
-    session_id = str(uuid.uuid4())
+    # RecommendationSession: DB에 세션 저장
+    session = RecommendationSession(
+        user_id=current_user.id,
+        user_valence=emotion_vector["valence"],
+        user_energy=emotion_vector["energy"],
+    )
+    db.add(session)
+    db.commit()
 
     return RecommendResponse(
-        session_id=session_id,
+        session_id=session.id,
         recommendations=[
             _to_recommendation_item(track, score, reasons.get(track.track_id))
             for track, score in catalog_tracks
