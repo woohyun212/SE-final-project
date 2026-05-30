@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 from app.services.stt import LocalWhisperProvider, STTProvider, get_stt_provider
 
-
 # ── 프로토콜 ──────────────────────────────────────────────────────────────────
 
 
