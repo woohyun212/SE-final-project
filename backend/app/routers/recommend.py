@@ -8,6 +8,7 @@ from app.schemas.context import ContextResult
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
 from app.services.emotion_fusion import fuse
 from app.services.ml_client import MLClient, get_ml_client
+from app.services.reason_generator import ReasonGenerator, get_reason_generator
 from app.services.recommendation import recommend_by_emotion
 from app.services.stt import STTProvider, get_stt_provider
 
@@ -32,6 +33,7 @@ async def recommend(
     stt: STTProvider = Depends(get_stt_provider),
     ml: MLClient = Depends(get_ml_client),
     analyzer: ContextAnalyzer | None = Depends(get_context_analyzer),
+    reason_gen: ReasonGenerator | None = Depends(get_reason_generator),
 ) -> RecommendResponse:
     audio_bytes = await audio.read()
 
@@ -52,10 +54,22 @@ async def recommend(
     emotion_vector = fuse(vad.valence, vad.arousal, vad.dominance, context)
 
     # RecommendationEngine: 코사인 유사도
-    tracks = recommend_by_emotion(db, emotion_vector)
+    catalog_tracks = recommend_by_emotion(db, emotion_vector)
+
+    # ReasonGenerator: 각 추천 곡에 대한 LLM 이유 생성
+    reasons: dict[str, str] = {}
+    if reason_gen is not None and catalog_tracks:
+        reasons = await reason_gen.generate(
+            catalog_tracks, vad.valence, vad.arousal, vad.dominance, context
+        )
+
+    def _to_track_with_reason(t: MusicCatalog) -> Track:
+        track = _to_track(t)
+        track.reason = reasons.get(t.track_id)
+        return track
 
     return RecommendResponse(
-        tracks=[_to_track(t) for t in tracks],
+        tracks=[_to_track_with_reason(t) for t in catalog_tracks],
         transcript=transcript,
         context=context,
     )

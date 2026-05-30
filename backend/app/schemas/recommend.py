@@ -10,6 +10,7 @@ class Track(BaseModel):
     album: str
     duration_sec: int
     preview_url: str | None = None
+    reason: str | None = None
 
 
 class RecommendResponse(BaseModel):
