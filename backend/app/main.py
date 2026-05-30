@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import app.models  # noqa: F401 — registers models with SQLAlchemy metadata
-from app.routers import auth, recommend
+from app.routers import auth, feedback, recommend
 
 logger = logging.getLogger("app.timing")
 
@@ -47,6 +47,7 @@ async def log_response_time(request: Request, call_next):
 
 
 app.include_router(auth.router)
+app.include_router(feedback.router)
 app.include_router(recommend.router)
 
 
