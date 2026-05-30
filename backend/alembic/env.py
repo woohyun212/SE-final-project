@@ -14,9 +14,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
-from app.database import Base  # noqa: E402
-import app.models.user  # noqa: F401, E402
 import app.models.token  # noqa: F401, E402
+import app.models.user  # noqa: F401, E402
+from app.database import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

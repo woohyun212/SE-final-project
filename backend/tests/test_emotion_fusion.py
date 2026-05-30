@@ -1,4 +1,3 @@
-import pytest
 
 from app.schemas.context import ContextResult
 from app.services.emotion_fusion import fuse

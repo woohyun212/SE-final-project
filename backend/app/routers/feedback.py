@@ -6,8 +6,8 @@ from app.database import get_db
 from app.models.feedback import Feedback, FeedbackType, PlaybackEvent
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
-from app.schemas.feedback import LikeDislikeRequest, PlaybackRequest
 from app.routers.auth import get_current_user
+from app.schemas.feedback import LikeDislikeRequest, PlaybackRequest
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
@@ -32,7 +32,9 @@ def _record_feedback(body: LikeDislikeRequest, user_id: int, feedback_type: Feed
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 피드백을 남긴 트랙입니다.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="이미 피드백을 남긴 트랙입니다."
+        ) from None
 
 
 @router.post("/like", status_code=201)

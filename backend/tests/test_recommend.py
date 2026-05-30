@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.database import Base, get_db
 import app.models  # noqa: F401
+from app.database import Base, get_db
 from app.routers.auth import get_current_user
 from app.routers.recommend import router
 from app.services.ml_client import MLClient, VADResult, get_ml_client
