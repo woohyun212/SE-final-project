@@ -25,6 +25,7 @@ from sqlalchemy.pool import StaticPool
 import app.models  # noqa: F401
 from app.database import Base, get_db
 from app.models.music_catalog import MusicCatalog
+from app.routers.auth import get_current_user
 from app.routers.recommend import router
 from app.schemas.context import ContextResult
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
@@ -299,6 +300,11 @@ def _make_mock_ml():
     return mock
 
 
+class _MockUser:
+    id = 1
+    email = "test@example.com"
+
+
 def _make_client(analyzer_instance, stt_transcript: str = "") -> TestClient:
     test_app = FastAPI()
     test_app.include_router(router)
@@ -314,6 +320,7 @@ def _make_client(analyzer_instance, stt_transcript: str = "") -> TestClient:
     test_app.dependency_overrides[get_context_analyzer] = lambda: analyzer_instance
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(stt_transcript)
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_current_user] = lambda: _MockUser()
     return TestClient(test_app)
 
 
