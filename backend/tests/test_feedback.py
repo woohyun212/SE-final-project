@@ -148,3 +148,60 @@ def test_like_nonexistent_track_returns_404() -> None:
     session_id, _ = _seed()
     res = client.post("/feedback/like", json={"recommendation_id": session_id, "track_id": "no_such_track"})
     assert res.status_code == 404
+
+
+# ── playback ──────────────────────────────────────────────────────────────────
+
+def test_playback_success() -> None:
+    client = _make_app()
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={
+        "track_id": track_id, "event": "start", "playback_pct": 0.0,
+    })
+    assert res.status_code == 201
+
+
+def test_playback_complete_with_pct() -> None:
+    client = _make_app()
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={
+        "track_id": track_id, "event": "complete", "playback_pct": 100.0,
+    })
+    assert res.status_code == 201
+
+
+def test_playback_pct_optional() -> None:
+    client = _make_app()
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={"track_id": track_id, "event": "end"})
+    assert res.status_code == 201
+
+
+def test_playback_no_auth_returns_401() -> None:
+    client = _make_app(with_auth=False)
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={"track_id": track_id, "event": "start"})
+    assert res.status_code == 401
+
+
+def test_playback_invalid_event_returns_422() -> None:
+    client = _make_app()
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={"track_id": track_id, "event": "pause"})
+    assert res.status_code == 422
+
+
+def test_playback_pct_out_of_range_returns_422() -> None:
+    client = _make_app()
+    _, track_id = _seed()
+    res = client.post("/feedback/playback", json={
+        "track_id": track_id, "event": "complete", "playback_pct": 150.0,
+    })
+    assert res.status_code == 422
+
+
+def test_playback_nonexistent_track_returns_404() -> None:
+    client = _make_app()
+    _seed()
+    res = client.post("/feedback/playback", json={"track_id": "no_such_track", "event": "start"})
+    assert res.status_code == 404
