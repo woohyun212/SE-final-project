@@ -3,10 +3,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.feedback import Feedback, FeedbackType
+from app.models.feedback import Feedback, FeedbackType, PlaybackEvent
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
-from app.schemas.feedback import LikeDislikeRequest
+from app.schemas.feedback import LikeDislikeRequest, PlaybackRequest
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
@@ -52,4 +52,22 @@ async def dislike(
     user=Depends(get_current_user),
 ):
     _record_feedback(body, user.id, FeedbackType.dislike, db)
+    return {}
+
+
+@router.post("/playback", status_code=201)
+async def playback(
+    body: PlaybackRequest,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    if db.get(MusicCatalog, body.track_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="트랙을 찾을 수 없습니다.")
+    db.add(PlaybackEvent(
+        user_id=user.id,
+        track_id=body.track_id,
+        event=body.event,
+        playback_pct=body.playback_pct,
+    ))
+    db.commit()
     return {}
