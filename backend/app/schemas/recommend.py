@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.schemas.context import ContextResult
 
 
-class Track(BaseModel):
+class TrackInfo(BaseModel):
     track_id: str
     title: str
     artist: str
@@ -12,7 +12,21 @@ class Track(BaseModel):
     preview_url: str | None = None
 
 
+class EmotionVector(BaseModel):
+    valence: float
+    energy: float
+
+
+class RecommendationItem(BaseModel):
+    track: TrackInfo
+    score: float
+    reason: str | None = None
+    track_features: EmotionVector
+
+
 class RecommendResponse(BaseModel):
-    tracks: list[Track]
+    session_id: str
+    recommendations: list[RecommendationItem]
+    user_emotion: EmotionVector
     transcript: str | None = None
     context: ContextResult | None = None

@@ -13,6 +13,7 @@ from app.database import Base, get_db
 import app.models  # noqa: F401
 from app.routers.recommend import router
 from app.services.ml_client import MLClient, VADResult, get_ml_client
+from app.services.reason_generator import ReasonGenerator, get_reason_generator
 from app.services.stt import get_stt_provider
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -73,6 +74,12 @@ def _make_mock_stt(transcript: str = ""):
     return mock
 
 
+def _make_mock_reason_gen(reasons: dict[str, str] | None = None):
+    mock = MagicMock(spec=ReasonGenerator)
+    mock.generate = AsyncMock(return_value=reasons or {})
+    return mock
+
+
 def _make_mock_ml(valence: float = 0.0, arousal: float = 0.0, dominance: float = 0.0):
     mock = MagicMock(spec=MLClient)
     mock.predict = AsyncMock(return_value=VADResult(
@@ -98,6 +105,7 @@ def client():
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen()
 
     with TestClient(test_app) as c:
         yield c
@@ -110,18 +118,44 @@ def _audio_file(filename: str = "test.wav") -> dict:
 def test_recommend_returns_ten_tracks(client: TestClient) -> None:
     res = client.post("/recommend", files=_audio_file())
     assert res.status_code == 200
-    assert len(res.json()["tracks"]) == 10
+    assert len(res.json()["recommendations"]) == 10
 
 
-def test_recommend_track_schema(client: TestClient) -> None:
+def test_recommend_item_schema(client: TestClient) -> None:
     res = client.post("/recommend", files=_audio_file())
-    for track in res.json()["tracks"]:
+    for item in res.json()["recommendations"]:
+        assert "score" in item
+        assert isinstance(item["score"], float)
+        track = item["track"]
         assert "track_id" in track
         assert "title" in track
         assert "artist" in track
         assert "album" in track
         assert "duration_sec" in track
         assert isinstance(track["duration_sec"], int)
+        tf = item["track_features"]
+        assert "valence" in tf
+        assert "energy" in tf
+
+
+def test_recommend_user_emotion_in_response(client: TestClient) -> None:
+    res = client.post("/recommend", files=_audio_file())
+    ue = res.json()["user_emotion"]
+    assert "valence" in ue
+    assert "energy" in ue
+
+
+def test_recommend_session_id_in_response(client: TestClient) -> None:
+    res = client.post("/recommend", files=_audio_file())
+    assert res.status_code == 200
+    assert "session_id" in res.json()
+
+
+def test_recommend_session_id_is_valid_uuid(client: TestClient) -> None:
+    import uuid
+    res = client.post("/recommend", files=_audio_file())
+    session_id = res.json()["session_id"]
+    uuid.UUID(session_id)  # raises ValueError if invalid
 
 
 def test_recommend_response_time(client: TestClient) -> None:
@@ -147,6 +181,7 @@ def test_recommend_stt_transcript_in_response() -> None:
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt(transcript_text)
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen()
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
@@ -175,11 +210,12 @@ def test_recommend_empty_catalog_returns_empty() -> None:
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen()
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
     assert res.status_code == 200
-    assert res.json()["tracks"] == []
+    assert res.json()["recommendations"] == []
 
 
 def test_recommend_fewer_than_ten_returns_all() -> None:
@@ -204,11 +240,12 @@ def test_recommend_fewer_than_ten_returns_all() -> None:
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen()
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
     assert res.status_code == 200
-    assert len(res.json()["tracks"]) == 5
+    assert len(res.json()["recommendations"]) == 5
 
 
 def test_recommend_vad_positive_affects_results() -> None:
@@ -228,9 +265,61 @@ def test_recommend_vad_positive_affects_results() -> None:
     test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml(
         valence=0.8, arousal=0.7, dominance=0.5
     )
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen()
 
     with TestClient(test_app) as c:
         res = c.post("/recommend", files=_audio_file())
 
     assert res.status_code == 200
-    assert len(res.json()["tracks"]) == 10
+    assert len(res.json()["recommendations"]) == 10
+
+
+def test_recommend_reason_in_item() -> None:
+    """ReasonGenerator가 반환한 이유가 각 추천 항목에 포함되는지 검증"""
+    test_app = FastAPI()
+    test_app.include_router(router)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    reasons = {f"track_{i:03d}": f"Reason for track {i}" for i in range(12)}
+    test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: _make_mock_reason_gen(reasons)
+
+    with TestClient(test_app) as c:
+        res = c.post("/recommend", files=_audio_file())
+
+    assert res.status_code == 200
+    for item in res.json()["recommendations"]:
+        assert item["reason"] == reasons[item["track"]["track_id"]]
+
+
+def test_recommend_reason_none_when_generator_disabled() -> None:
+    """ReasonGenerator가 None일 때 reason 필드가 null인지 검증"""
+    test_app = FastAPI()
+    test_app.include_router(router)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    test_app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_stt_provider] = lambda: _make_mock_stt()
+    test_app.dependency_overrides[get_ml_client] = lambda: _make_mock_ml()
+    test_app.dependency_overrides[get_reason_generator] = lambda: None
+
+    with TestClient(test_app) as c:
+        res = c.post("/recommend", files=_audio_file())
+
+    assert res.status_code == 200
+    for item in res.json()["recommendations"]:
+        assert item["reason"] is None
