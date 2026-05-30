@@ -23,7 +23,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("user_valence", sa.Float(), nullable=False),
         sa.Column("user_energy", sa.Float(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_recommendation_sessions_user_id", "recommendation_sessions", ["user_id"])
 
@@ -34,7 +34,7 @@ def upgrade() -> None:
         sa.Column("track_id", sa.String(), sa.ForeignKey("music_catalog.track_id"), nullable=False),
         sa.Column("recommendation_id", sa.String(36), sa.ForeignKey("recommendation_sessions.id"), nullable=False),
         sa.Column("feedback_type", sa.Enum("like", "dislike", name="feedbacktype"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_feedbacks_user_id", "feedbacks", ["user_id"])
     op.create_unique_constraint(

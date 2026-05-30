@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -27,7 +28,11 @@ def _record_feedback(body: LikeDislikeRequest, user_id: int, feedback_type: Feed
         recommendation_id=body.recommendation_id,
         feedback_type=feedback_type,
     ))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 피드백을 남긴 트랙입니다.")
 
 
 @router.post("/like", status_code=201)
