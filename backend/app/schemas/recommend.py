@@ -18,20 +18,15 @@ class EmotionVector(BaseModel):
 
 
 class RecommendationItem(BaseModel):
-    recommendation_id: str
     track: TrackInfo
     score: float
     reason: str | None = None
-    emotion_vector: EmotionVector
-
-
-class UserEmotion(BaseModel):
-    valence: float
-    energy: float
+    track_features: EmotionVector
 
 
 class RecommendResponse(BaseModel):
+    session_id: str
     recommendations: list[RecommendationItem]
-    user_emotion: UserEmotion
+    user_emotion: EmotionVector
     transcript: str | None = None
     context: ContextResult | None = None

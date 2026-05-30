@@ -10,7 +10,6 @@ from app.schemas.recommend import (
     RecommendationItem,
     RecommendResponse,
     TrackInfo,
-    UserEmotion,
 )
 from app.schemas.context import ContextResult
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
@@ -27,10 +26,8 @@ def _to_recommendation_item(
     catalog: MusicCatalog,
     score: float,
     reason: str | None,
-    recommendation_id: str,
 ) -> RecommendationItem:
     return RecommendationItem(
-        recommendation_id=recommendation_id,
         track=TrackInfo(
             track_id=catalog.track_id,
             title=catalog.track_name,
@@ -41,7 +38,7 @@ def _to_recommendation_item(
         ),
         score=round(score, 4),
         reason=reason,
-        emotion_vector=EmotionVector(
+        track_features=EmotionVector(
             valence=round(catalog.valence, 3),
             energy=round(catalog.energy, 3),
         ),
@@ -93,11 +90,12 @@ async def recommend(
     session_id = str(uuid.uuid4())
 
     return RecommendResponse(
+        session_id=session_id,
         recommendations=[
-            _to_recommendation_item(track, score, reasons.get(track.track_id), session_id)
+            _to_recommendation_item(track, score, reasons.get(track.track_id))
             for track, score in catalog_tracks
         ],
-        user_emotion=UserEmotion(
+        user_emotion=EmotionVector(
             valence=round(emotion_vector["valence"], 3),
             energy=round(emotion_vector["energy"], 3),
         ),

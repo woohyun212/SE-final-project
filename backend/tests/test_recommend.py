@@ -124,7 +124,6 @@ def test_recommend_returns_ten_tracks(client: TestClient) -> None:
 def test_recommend_item_schema(client: TestClient) -> None:
     res = client.post("/recommend", files=_audio_file())
     for item in res.json()["recommendations"]:
-        assert "recommendation_id" in item
         assert "score" in item
         assert isinstance(item["score"], float)
         track = item["track"]
@@ -134,9 +133,9 @@ def test_recommend_item_schema(client: TestClient) -> None:
         assert "album" in track
         assert "duration_sec" in track
         assert isinstance(track["duration_sec"], int)
-        ev = item["emotion_vector"]
-        assert "valence" in ev
-        assert "energy" in ev
+        tf = item["track_features"]
+        assert "valence" in tf
+        assert "energy" in tf
 
 
 def test_recommend_user_emotion_in_response(client: TestClient) -> None:
@@ -144,6 +143,19 @@ def test_recommend_user_emotion_in_response(client: TestClient) -> None:
     ue = res.json()["user_emotion"]
     assert "valence" in ue
     assert "energy" in ue
+
+
+def test_recommend_session_id_in_response(client: TestClient) -> None:
+    res = client.post("/recommend", files=_audio_file())
+    assert res.status_code == 200
+    assert "session_id" in res.json()
+
+
+def test_recommend_session_id_is_valid_uuid(client: TestClient) -> None:
+    import uuid
+    res = client.post("/recommend", files=_audio_file())
+    session_id = res.json()["session_id"]
+    uuid.UUID(session_id)  # raises ValueError if invalid
 
 
 def test_recommend_response_time(client: TestClient) -> None:
