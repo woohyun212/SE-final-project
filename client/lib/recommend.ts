@@ -10,7 +10,6 @@
  * 건드리지 않는다. 본 파일은 #45/#46 전용 확장 타입을 독립적으로 보유한다.
  */
 
-import type { RecommendResponse } from './api';
 
 /** 추천 트랙 — 미래 백엔드 확장 응답 기준 (#38 + audio features). */
 export interface RecommendedTrack {
@@ -142,8 +141,8 @@ export const MOCK_RECOMMEND_RESULT: RecommendResult = {
 
 const RECOMMEND_SESSION_KEY = 'se_emotion_music__recommend_result';
 
-/** 추천 결과를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
-export function saveRecommendResult(result: RecommendResponse): void {
+/** 추천 결과(도메인 RecommendResult)를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
+export function saveRecommendResult(result: RecommendResult): void {
   if (typeof window === 'undefined') return;
   try {
     window.sessionStorage.setItem(RECOMMEND_SESSION_KEY, JSON.stringify(result));
@@ -153,12 +152,12 @@ export function saveRecommendResult(result: RecommendResponse): void {
 }
 
 /** 저장된 추천 결과 로드. 없거나 파싱 실패 시 null. */
-export function loadRecommendResult(): RecommendResponse | null {
+export function loadRecommendResult(): RecommendResult | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(RECOMMEND_SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as RecommendResponse;
+    return JSON.parse(raw) as RecommendResult;
   } catch {
     return null;
   }

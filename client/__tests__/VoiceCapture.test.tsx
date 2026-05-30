@@ -131,18 +131,42 @@ describe("VoiceCapture", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/마이크 권한이 거부/);
   });
 
-  it("onResult 콜백으로 추천 결과를 전달", async () => {
+  it("onResult 콜백으로 어댑터 변환된 추천 결과(RecommendResult)를 전달", async () => {
     const onResult = jest.fn();
-    const result = {
-      tracks: [{ title: "a", artist: "x", album: "z", duration_sec: 100 }],
+    // 백엔드 새 shape(raw) — VoiceCapture 가 toRecommendResult 로 변환해 전달한다.
+    const raw = {
+      session_id: "s-1",
+      recommendations: [
+        {
+          track: {
+            track_id: "t-1",
+            title: "a",
+            artist: "x",
+            album: "z",
+            duration_sec: 100,
+          },
+          score: 0.9,
+          reason: "추천 이유",
+          track_features: { valence: 0.7, energy: 0.3 },
+        },
+      ],
+      user_emotion: { valence: 0.4, energy: 0.6 },
+      transcript: "전사",
     };
-    mockRecommendApi.mockResolvedValue(result);
+    mockRecommendApi.mockResolvedValue(raw);
     mockUseRecorder.mockReturnValue(
       makeRecorder({ status: "recorded", audioBlob: new Blob(["x"]) })
     );
 
     render(<VoiceCapture onResult={onResult} />);
 
-    await waitFor(() => expect(onResult).toHaveBeenCalledWith(result));
+    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(1));
+    const passed = onResult.mock.calls[0][0];
+    expect(passed.tracks).toHaveLength(1);
+    expect(passed.tracks[0].track_id).toBe("t-1");
+    expect(passed.tracks[0].valence).toBe(0.7);
+    expect(passed.tracks[0].energy).toBe(0.3);
+    expect(passed.tracks[0].reason).toBe("추천 이유");
+    expect(passed.userEmotion).toEqual({ valence: 0.4, energy: 0.6 });
   });
 });
