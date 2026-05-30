@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 
 from app.main import _parse_cors_origins, app
 
-
 client = TestClient(app)
 
 

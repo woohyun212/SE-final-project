@@ -47,7 +47,7 @@ class ContextAnalyzer:
                 raw = match.group(1)
             data = json.loads(raw)
             return ContextResult.model_validate(data)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("ContextAnalyzer timed out after %.1fs", _ANALYZE_TIMEOUT)
             return ContextResult()
         except Exception as exc:

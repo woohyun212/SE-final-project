@@ -21,9 +21,8 @@ class LocalWhisperProvider:
 
     def _load_model(self):
         if self._model is None:
-            from faster_whisper import WhisperModel
-
             import ctranslate2
+            from faster_whisper import WhisperModel
             _cuda_available = ctranslate2.get_cuda_device_count() > 0
             device = os.getenv("WHISPER_DEVICE", "cuda" if _cuda_available else "cpu")
             compute_type = "float16" if device == "cuda" else "int8"
