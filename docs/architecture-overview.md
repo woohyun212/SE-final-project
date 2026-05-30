@@ -130,6 +130,20 @@ classDiagram
 
 피드백 수집을 `RecommendationEngine`에 합치지 않고 별도 컴포넌트로 분리함으로써 추천 알고리즘 변경이 피드백 수집 로직에 영향을 주지 않도록 했다. 또한 재생률·좋아요 집계는 비동기 배치로도 처리 가능해 NFR1.1(P95 ≤ 3초) 응답 시간 예산에 영향을 주지 않는다.
 
+**`RecommendationVisualizer` 클라이언트 구현 분해**
+
+설계 컴포넌트 사전(SRS §7)에서 `RecommendationVisualizer`는 "2D 차트 + LLM 이유 렌더링"이라는 하나의 책임 단위로 기술되지만, 실제 Electron/Next.js 구현에서는 단일책임 원칙(SRP)에 따라 세 개의 props-only 프레젠테이션 컴포넌트로 분해했다. props-only(상태·API 비의존)이므로 각 컴포넌트를 독립적으로 단위 테스트할 수 있다.
+
+| 구현 컴포넌트 | 책임 | 대응 FR / 이슈 |
+|---|---|---|
+| `RecommendationVisualizer.tsx` | 추천 곡 리스트 (앨범아트·제목·아티스트·재생시간) | FR4.2 / US-5 (#20) |
+| `EmotionMusicChart.tsx` | valence × energy 2D 매핑 차트 (순수 SVG, 색맹 대응 팔레트) | FR5.1~5.2 / US-15 (#45) |
+| `RecommendationReasonCard.tsx` | 곡별 LLM 추천 이유 카드 | FR5.3 / US-16 (#46) |
+
+세 컴포넌트는 `client/lib/recommend.ts`의 도메인 타입(`RecommendResult`)을 공유 계약으로 소비한다. 백엔드 `POST /recommend` 응답(snake_case·중첩 `recommendations[]`)을 도메인 타입으로 변환하는 어댑터(`toRecommendResult`)를 단일 경계로 두어, 백엔드 응답 shape 변경이 프레젠테이션 컴포넌트로 직접 전파되지 않도록 격리했다 (응답 계약은 §8 API 참조).
+
+> 설계서 §3 컴포넌트 사전(`docs/02-design-document.html`)은 Phase 1 제출 동결본이므로, 본 구현 분해는 살아있는 문서인 본 아키텍처 개요에 기록하여 정합을 유지한다.
+
 ---
 
 ## 2. Process View — 런타임 흐름

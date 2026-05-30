@@ -173,3 +173,102 @@ export function clearRecommendResult(): void {
     // ignore
   }
 }
+
+// ── 백엔드 응답 어댑터 (#107/#108 → 도메인 RecommendResult) ──────────────────
+//
+// 백엔드 `POST /recommend` 응답(snake_case·중첩)을 프레젠테이션 컴포넌트가 쓰는
+// 도메인 타입으로 변환하는 **단일 경계**. 백엔드가 필드명을 바꿔도
+// (예: emotion_vector → track_features, recommendation_id → session_id) 이 함수만
+// 고치면 소비처(VoiceCapture / recommend.tsx / 차트 / 이유카드)는 영향이 없다.
+//
+// 현행 backend 머지본 기준 raw shape:
+//   { session_id, recommendations: [{ track{track_id,title,artist,album,
+//     duration_sec,preview_url?}, score, reason?, track_features{valence,energy} }],
+//     user_emotion{valence,energy}, transcript?, context? }
+
+/** 백엔드 RecommendResponse 의 개별 추천 항목 raw shape. 어댑터 입력 전용. */
+interface RawRecommendationItem {
+  track: {
+    track_id: string;
+    title: string;
+    artist: string;
+    album: string;
+    duration_sec: number;
+    preview_url?: string | null;
+  };
+  score: number;
+  reason?: string | null;
+  track_features: { valence: number; energy: number };
+}
+
+const NEUTRAL = 0.5;
+
+/**
+ * 백엔드 `/recommend` 응답(raw)을 도메인 `RecommendResult` 로 변환.
+ *
+ * - 새 shape(`recommendations[]` + `track_features` + `user_emotion`): 전 필드 매핑.
+ * - 옛 shape(`{ tracks: [...] }`, transition fallback): valence/energy/reason 미제공이라
+ *   중립값(0.5)/null 로 채움 — 리스트만 실데이터, 차트/이유는 호출자가 mock fallback.
+ * - 알 수 없는 형태: 빈 결과.
+ */
+export function toRecommendResult(raw: unknown): RecommendResult {
+  const o = (raw ?? {}) as Record<string, unknown>;
+
+  // 새 shape (#107)
+  if (Array.isArray(o.recommendations)) {
+    const items = o.recommendations as RawRecommendationItem[];
+    const tracks: RecommendedTrack[] = items.map((it) => ({
+      track_id: it.track.track_id,
+      title: it.track.title,
+      artist: it.track.artist,
+      album: it.track.album,
+      duration_sec: it.track.duration_sec,
+      preview_url: it.track.preview_url ?? null,
+      valence: it.track_features.valence,
+      energy: it.track_features.energy,
+      reason: it.reason ?? null,
+    }));
+    const ue = (o.user_emotion ?? { valence: NEUTRAL, energy: NEUTRAL }) as {
+      valence: number;
+      energy: number;
+    };
+    return {
+      tracks,
+      userEmotion: { valence: ue.valence, energy: ue.energy },
+      transcript: (o.transcript as string | null) ?? null,
+    };
+  }
+
+  // 옛 shape (transition fallback)
+  if (Array.isArray(o.tracks)) {
+    const legacy = o.tracks as Array<{
+      title: string;
+      artist: string;
+      album: string;
+      duration_sec: number;
+      track_id?: string;
+    }>;
+    const tracks: RecommendedTrack[] = legacy.map((t, i) => ({
+      track_id: t.track_id ?? `legacy-${i}`,
+      title: t.title,
+      artist: t.artist,
+      album: t.album,
+      duration_sec: t.duration_sec,
+      preview_url: null,
+      valence: NEUTRAL,
+      energy: NEUTRAL,
+      reason: null,
+    }));
+    return {
+      tracks,
+      userEmotion: { valence: NEUTRAL, energy: NEUTRAL },
+      transcript: null,
+    };
+  }
+
+  return {
+    tracks: [],
+    userEmotion: { valence: NEUTRAL, energy: NEUTRAL },
+    transcript: null,
+  };
+}
