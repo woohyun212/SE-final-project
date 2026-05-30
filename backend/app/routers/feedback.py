@@ -19,20 +19,24 @@ def _validate_feedback(body: LikeDislikeRequest, user_id: int, db: Session) -> N
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="트랙을 찾을 수 없습니다.")
 
 
+def _record_feedback(body: LikeDislikeRequest, user_id: int, feedback_type: FeedbackType, db: Session) -> None:
+    _validate_feedback(body, user_id, db)
+    db.add(Feedback(
+        user_id=user_id,
+        track_id=body.track_id,
+        recommendation_id=body.recommendation_id,
+        feedback_type=feedback_type,
+    ))
+    db.commit()
+
+
 @router.post("/like", status_code=201)
 async def like(
     body: LikeDislikeRequest,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    _validate_feedback(body, user.id, db)
-    db.add(Feedback(
-        user_id=user.id,
-        track_id=body.track_id,
-        recommendation_id=body.recommendation_id,
-        feedback_type=FeedbackType.like,
-    ))
-    db.commit()
+    _record_feedback(body, user.id, FeedbackType.like, db)
     return {}
 
 
@@ -42,12 +46,5 @@ async def dislike(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    _validate_feedback(body, user.id, db)
-    db.add(Feedback(
-        user_id=user.id,
-        track_id=body.track_id,
-        recommendation_id=body.recommendation_id,
-        feedback_type=FeedbackType.dislike,
-    ))
-    db.commit()
+    _record_feedback(body, user.id, FeedbackType.dislike, db)
     return {}

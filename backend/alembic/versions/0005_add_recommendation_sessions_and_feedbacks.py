@@ -37,9 +37,13 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
     op.create_index("ix_feedbacks_user_id", "feedbacks", ["user_id"])
+    op.create_unique_constraint(
+        "uq_feedback_user_track_session", "feedbacks", ["user_id", "track_id", "recommendation_id"]
+    )
 
 
 def downgrade() -> None:
+    op.drop_constraint("uq_feedback_user_track_session", "feedbacks", type_="unique")
     op.drop_index("ix_feedbacks_user_id", "feedbacks")
     op.drop_table("feedbacks")
     op.execute("DROP TYPE IF EXISTS feedbacktype")

@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Enum, ForeignKey, String
+from sqlalchemy import DateTime, Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -12,6 +12,9 @@ class FeedbackType(str, enum.Enum):
 
 class Feedback(Base):
     __tablename__ = "feedbacks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "track_id", "recommendation_id", name="uq_feedback_user_track_session"),
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     track_id: Mapped[str] = mapped_column(ForeignKey("music_catalog.track_id"), nullable=False)
