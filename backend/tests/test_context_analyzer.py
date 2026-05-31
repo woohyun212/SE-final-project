@@ -165,52 +165,58 @@ def test_get_context_analyzer_returns_none_without_key(monkeypatch):
 # ---------------------------------------------------------------------------
 
 async def test_analyze_empty_text_returns_empty_without_api(mock_analyzer):
-    result = await mock_analyzer.analyze("")
+    result, fallback = await mock_analyzer.analyze("")
     assert result == ContextResult()
+    assert fallback is False
 
 
 async def test_analyze_parses_clean_json(mock_analyzer):
     mock_analyzer._client.aio.models.generate_content = AsyncMock(
         return_value=_resp('{"time_of_day": "evening", "location": "home", "activity": "relaxing", "emotions": {"calm": 0.6, "melancholic": 0.4}}')
     )
-    result = await mock_analyzer.analyze("test")
+    result, fallback = await mock_analyzer.analyze("test")
     assert result.time_of_day == "evening"
     assert result.location == "home"
     assert result.activity == "relaxing"
     assert result.emotions == {"calm": 0.6, "melancholic": 0.4}
+    assert fallback is False
 
 
 async def test_analyze_parses_markdown_fence(mock_analyzer):
     mock_analyzer._client.aio.models.generate_content = AsyncMock(
         return_value=_resp('```json\n{"time_of_day": "morning", "location": null, "activity": null, "emotions": null}\n```')
     )
-    result = await mock_analyzer.analyze("test")
+    result, fallback = await mock_analyzer.analyze("test")
     assert result.time_of_day == "morning"
     assert result.location is None
+    assert fallback is False
 
 
 async def test_analyze_malformed_response_returns_empty(mock_analyzer):
     mock_analyzer._client.aio.models.generate_content = AsyncMock(
         return_value=_resp("not valid json at all")
     )
-    result = await mock_analyzer.analyze("test")
+    result, fallback = await mock_analyzer.analyze("test")
     assert result == ContextResult()
+    assert fallback is True
 
 
 async def test_analyze_timeout_returns_empty(mock_analyzer):
     mock_analyzer._client.aio.models.generate_content = AsyncMock(
         side_effect=asyncio.TimeoutError
     )
-    result = await mock_analyzer.analyze("test")
+    result, fallback = await mock_analyzer.analyze("test")
     assert result == ContextResult()
+    assert fallback is True
 
 
 async def test_analyze_api_error_returns_empty(mock_analyzer):
     mock_analyzer._client.aio.models.generate_content = AsyncMock(
         side_effect=RuntimeError("API quota exceeded")
     )
-    result = await mock_analyzer.analyze("test")
+    result, fallback = await mock_analyzer.analyze("test")
     assert result == ContextResult()
+    assert fallback is True
 
 
 # ---------------------------------------------------------------------------
@@ -220,7 +226,7 @@ async def test_analyze_api_error_returns_empty(mock_analyzer):
 @pytest.mark.live
 async def test_analyze_commuting(analyzer):
     text = "지하철 타고 출근 중이야, 사람 많고 피곤해"
-    result = await analyzer.analyze(text)
+    result, _ = await analyzer.analyze(text)
     print(f"\n[입력] {text}")
     print(f"[결과] {result}")
     assert result.location == "commute"
@@ -230,7 +236,7 @@ async def test_analyze_commuting(analyzer):
 @pytest.mark.live
 async def test_analyze_home_evening(analyzer):
     text = "집에서 저녁에 음악 들으며 쉬고 있어"
-    result = await analyzer.analyze(text)
+    result, _ = await analyzer.analyze(text)
     print(f"\n[입력] {text}")
     print(f"[결과] {result}")
     assert result.time_of_day == "evening"
@@ -241,7 +247,7 @@ async def test_analyze_home_evening(analyzer):
 @pytest.mark.live
 async def test_analyze_gym_workout(analyzer):
     text = "헬스장에서 운동 중이야, 기분 너무 좋다!"
-    result = await analyzer.analyze(text)
+    result, _ = await analyzer.analyze(text)
     print(f"\n[입력] {text}")
     print(f"[결과] {result}")
     assert result.location == "gym"
@@ -251,7 +257,7 @@ async def test_analyze_gym_workout(analyzer):
 @pytest.mark.live
 async def test_analyze_study_cafe(analyzer):
     text = "카페에서 시험 공부 중, 집중이 안 된다"
-    result = await analyzer.analyze(text)
+    result, _ = await analyzer.analyze(text)
     print(f"\n[입력] {text}")
     print(f"[결과] {result}")
     assert result.location == "cafe"
@@ -261,7 +267,7 @@ async def test_analyze_study_cafe(analyzer):
 @pytest.mark.live
 async def test_analyze_emotions_are_valid_schema(analyzer):
     text = "요즘 너무 불안하고 우울해, 아무것도 하기 싫어"
-    result = await analyzer.analyze(text)
+    result, _ = await analyzer.analyze(text)
     print(f"\n[입력] {text}")
     print(f"[결과] emotions={result.emotions}")
     valid_labels = {"happy", "sad", "angry", "anxious", "calm", "energetic", "melancholic"}
@@ -273,7 +279,7 @@ async def test_analyze_emotions_are_valid_schema(analyzer):
 
 @pytest.mark.live
 async def test_analyze_returns_valid_context_result_type(analyzer):
-    result = await analyzer.analyze("오늘 재택근무 중, 점심 먹고 졸리다")
+    result, _ = await analyzer.analyze("오늘 재택근무 중, 점심 먹고 졸리다")
     print(f"\n[결과] {result}")
     assert isinstance(result, ContextResult)
     if result.time_of_day is not None:
