@@ -24,9 +24,16 @@ class RecommendationItem(BaseModel):
     track_features: EmotionVector
 
 
+class FallbackFlags(BaseModel):
+    ml: bool = False
+    context: bool = False
+    reason: bool = False
+
+
 class RecommendResponse(BaseModel):
     session_id: str
     recommendations: list[RecommendationItem]
     user_emotion: EmotionVector
     transcript: str | None = None
     context: ContextResult | None = None
+    fallback_flags: FallbackFlags = FallbackFlags()
