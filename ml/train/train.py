@@ -56,8 +56,9 @@ def main():
     parser.add_argument("--data_dir", default="data/raw")
     parser.add_argument("--output_dir", default="model")
     parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=3e-5)
+    parser.add_argument("--fp16", action="store_true", default=True)
     parser.add_argument("--test_size", type=float, default=0.2)
     args = parser.parse_args()
 
@@ -91,6 +92,7 @@ def main():
         report_to="none",
         dataloader_num_workers=0,
         disable_tqdm=False,
+        fp16=args.fp16,
     )
 
     trainer = Trainer(
