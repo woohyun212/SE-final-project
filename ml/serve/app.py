@@ -30,7 +30,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/ml/predict", response_model=EmotionVector)
+@app.post("/predict", response_model=EmotionVector)
 async def predict_emotion(audio: UploadFile = File(...)):
     audio_bytes = await audio.read()
     if len(audio_bytes) == 0:

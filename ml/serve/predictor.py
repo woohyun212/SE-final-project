@@ -15,6 +15,8 @@ MODEL_DIR = str(Path(__file__).parent.parent / "model" / "best")
 
 @lru_cache(maxsize=1)
 def _load_model() -> tuple[Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor]:
+    if not Path(MODEL_DIR).exists():
+        raise RuntimeError(f"모델 없음: {MODEL_DIR} — 학습 먼저 실행하세요 (make train)")
     extractor = Wav2Vec2FeatureExtractor.from_pretrained(MODEL_DIR)
     model = Wav2Vec2ForSequenceClassification.from_pretrained(MODEL_DIR)
     model.eval()
