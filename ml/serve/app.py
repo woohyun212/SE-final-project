@@ -31,6 +31,7 @@ class EmotionVector(BaseModel):
     valence: float
     arousal: float
     dominance: float
+    confidence: float
     probabilities: dict[str, float]
 
 

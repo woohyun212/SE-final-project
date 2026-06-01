@@ -50,7 +50,13 @@ def predict(audio_bytes: bytes) -> dict:
 
     probs = torch.softmax(logits, dim=-1).squeeze().tolist()
     pred_id = int(torch.argmax(logits))
-    pred_label = ID2LABEL[pred_id]
+    confidence = round(max(probs), 4)
+
+    # 신뢰도 낮으면 neutral fallback
+    if confidence < 0.4:
+        pred_label = "neutral"
+    else:
+        pred_label = ID2LABEL[pred_id]
     valence, arousal, dominance = VAD_MAP[pred_label]
 
     return {
@@ -58,5 +64,6 @@ def predict(audio_bytes: bytes) -> dict:
         "valence": valence,
         "arousal": arousal,
         "dominance": dominance,
+        "confidence": confidence,
         "probabilities": {ID2LABEL[i]: round(p, 4) for i, p in enumerate(probs)},
     }
