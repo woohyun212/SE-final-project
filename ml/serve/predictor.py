@@ -28,6 +28,9 @@ def load_model() -> None:
 
 def predict(audio_bytes: bytes) -> dict:
     """음성 바이트 → 감정 벡터 (valence, arousal, dominance) + 레이블 + 확률"""
+    if _model is None or _extractor is None:
+        raise RuntimeError("모델이 로드되지 않았습니다. 서버 재시작이 필요합니다.")
+
     audio, sr = sf.read(io.BytesIO(audio_bytes))
     if audio.ndim > 1:
         audio = audio.mean(axis=1)
