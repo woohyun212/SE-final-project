@@ -86,7 +86,7 @@ def _make_mock_stt(transcript: str = ""):
 
 def _make_mock_reason_gen(reasons: dict[str, str] | None = None):
     mock = MagicMock(spec=ReasonGenerator)
-    mock.generate = AsyncMock(return_value=reasons or {})
+    mock.generate = AsyncMock(return_value=(reasons or {}, False))
     return mock
 
 
