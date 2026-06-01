@@ -31,7 +31,11 @@ class VADResult:
 
 
 def vad_from_text(transcript: str) -> VADResult:
-    """transcript 감정 키워드 → VAD 추정. 매칭 없으면 중립 (0.0, 0.0, 0.0) 반환."""
+    """transcript 감정 키워드 → VAD 추정. 매칭 없으면 중립 (0.0, 0.0, 0.0) 반환.
+
+    부분 문자열 매칭(kw in text) 사용 — 오매칭 가능하나 폴백 휴리스틱 수준으로 허용.
+    복수 키워드 매칭 시 VAD를 단순 평균함 — 동의어 중복 매칭 시 강도가 희석될 수 있음.
+    """
     if not transcript:
         return VADResult(0.0, 0.0, 0.0)
     text = transcript.lower()

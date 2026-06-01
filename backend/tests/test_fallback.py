@@ -203,28 +203,46 @@ def test_context_no_fallback_when_llm_succeeds():
 
 # ── _rule_based_reason 단위 테스트 ────────────────────────────────────────────
 
-def test_rule_based_reason_high_valence():
+def _make_track(**kwargs):
     from app.models.music_catalog import MusicCatalog
-    track = MusicCatalog(valence=0.8, energy=0.5, acousticness=0.2, danceability=0.5, instrumentalness=0.1)
-    assert "밝고 긍정적인 에너지" in _rule_based_reason(track)
+    defaults = {
+        "track_id": "test_track",
+        "track_name": "Test Track",
+        "artists": "Test Artist",
+        "album_name": "Test Album",
+        "track_genre": "pop",
+        "duration_ms": 200_000,
+        "speechiness": 0.05,
+        "liveness": 0.1,
+        "tempo": 120.0,
+        "loudness": -8.0,
+        "key": 0,
+        "mode": 1,
+        "time_signature": 4,
+        "danceability": 0.5,
+        "energy": 0.5,
+        "valence": 0.5,
+        "acousticness": 0.2,
+        "instrumentalness": 0.1,
+    }
+    defaults.update(kwargs)
+    return MusicCatalog(**defaults)
+
+
+def test_rule_based_reason_high_valence():
+    assert "밝고 긍정적인 에너지" in _rule_based_reason(_make_track(valence=0.8))
 
 
 def test_rule_based_reason_high_energy():
-    from app.models.music_catalog import MusicCatalog
-    track = MusicCatalog(valence=0.5, energy=0.8, acousticness=0.2, danceability=0.5, instrumentalness=0.1)
-    assert "활기찬 비트" in _rule_based_reason(track)
+    assert "활기찬 비트" in _rule_based_reason(_make_track(energy=0.8))
 
 
 def test_rule_based_reason_acoustic():
-    from app.models.music_catalog import MusicCatalog
-    track = MusicCatalog(valence=0.5, energy=0.5, acousticness=0.8, danceability=0.5, instrumentalness=0.1)
-    assert "어쿠스틱한 감성" in _rule_based_reason(track)
+    assert "어쿠스틱한 감성" in _rule_based_reason(_make_track(acousticness=0.8))
 
 
 def test_rule_based_reason_default_when_no_feature_matches():
-    from app.models.music_catalog import MusicCatalog
-    track = MusicCatalog(valence=0.5, energy=0.5, acousticness=0.3, danceability=0.5, instrumentalness=0.1)
-    assert "현재 감정 상태에 어울리는 분위기" in _rule_based_reason(track)
+    assert "현재 감정 상태에 어울리는 분위기" in _rule_based_reason(_make_track(acousticness=0.3))
 
 
 # ── ReasonGenerator fallback 통합 테스트 ─────────────────────────────────────

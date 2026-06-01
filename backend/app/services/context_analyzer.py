@@ -46,14 +46,19 @@ _EMOTION_KEYWORDS: dict[str, list[str]] = {
     "melancholic": ["쓸쓸", "허전", "그리워", "melancholic"],
 }
 
+# 폴백 룰베이스에서 매칭된 모든 감정에 부여하는 기본 강도 점수
+_DEFAULT_EMOTION_SCORE = 0.8
+
 
 def _rule_based_context(text: str) -> ContextResult:
+    # 부분 문자열 매칭(kw in t) 사용 — "쉬"→"쉬운", "좋아"→"좋아하지 않아" 오매칭 가능.
+    # 폴백 휴리스틱 특성상 허용되는 한계.
     t = text.lower()
 
     time_of_day = next((k for k, kws in _TIME_KEYWORDS.items() if any(kw in t for kw in kws)), None)
     location = next((k for k, kws in _LOCATION_KEYWORDS.items() if any(kw in t for kw in kws)), None)
     activity = next((k for k, kws in _ACTIVITY_KEYWORDS.items() if any(kw in t for kw in kws)), None)
-    emotions = {k: 0.8 for k, kws in _EMOTION_KEYWORDS.items() if any(kw in t for kw in kws)} or None
+    emotions = {k: _DEFAULT_EMOTION_SCORE for k, kws in _EMOTION_KEYWORDS.items() if any(kw in t for kw in kws)} or None
 
     return ContextResult(time_of_day=time_of_day, location=location, activity=activity, emotions=emotions)
 
