@@ -6,6 +6,7 @@ import soundfile as sf
 import torch
 from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor
 
+from serve.audio_preprocess import preprocess
 from train.dataset import ID2LABEL, VAD_MAP, SAMPLING_RATE, MAX_DURATION_SEC
 
 MODEL_DIR = str(Path(__file__).parent.parent / "model" / "best")
@@ -39,6 +40,7 @@ def predict(audio_bytes: bytes) -> dict:
         audio = librosa.resample(audio, orig_sr=sr, target_sr=SAMPLING_RATE)
 
     audio = audio[: MAX_DURATION_SEC * SAMPLING_RATE].astype(np.float32)
+    audio = preprocess(audio, SAMPLING_RATE)
 
     inputs = _extractor(audio, sampling_rate=SAMPLING_RATE, return_tensors="pt", padding=True)
     inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
