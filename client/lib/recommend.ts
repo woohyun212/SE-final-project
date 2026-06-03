@@ -48,6 +48,27 @@ export interface RecommendResult {
   transcript?: string | null;
 }
 
+// ── 피드백 / 재생 / 이력 도메인 타입 (#47/#48/#50) ──────────────────────────
+export type FeedbackType = 'like' | 'dislike';
+export type PlaybackEvent = 'start' | 'end' | 'complete';
+
+/** 추천 이력 항목의 피드백 엔트리 (백엔드 FeedbackEntry). */
+export interface FeedbackEntry {
+  track_id: string;
+  title: string;
+  artist: string;
+  feedback_type: string;
+}
+
+/** 추천 이력 항목 (백엔드 GET /history → HistoryItem[]). */
+export interface HistoryItem {
+  id: string;
+  user_valence: number;
+  user_energy: number;
+  created_at: string;
+  feedbacks: FeedbackEntry[];
+}
+
 /**
  * 개발/프리뷰용 mock 추천 결과.
  * - 곡 6개를 valence×energy 4사분면에 고르게 분포 (차트 가시성 확보)

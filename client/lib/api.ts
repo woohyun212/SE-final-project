@@ -1,3 +1,5 @@
+import type { FeedbackType, PlaybackEvent, HistoryItem } from "./recommend";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -214,4 +216,53 @@ export async function recommendApi(
   });
   // raw 응답 — 호출자가 toRecommendResult 로 도메인 타입 변환.
   return response.json() as Promise<unknown>;
+}
+
+/**
+ * 곡 피드백 (좋아요/싫어요) — `POST /feedback/{like|dislike}` (#47, FR6.1).
+ * 설계상 append-only(취소 없음). recommendationId 는 추천 세션 식별자
+ * (`RecommendResult.sessionId`).
+ */
+export async function feedbackApi(
+  type: FeedbackType,
+  trackId: string,
+  recommendationId: string
+): Promise<void> {
+  await authedFetch(`/feedback/${type}`, {
+    method: "POST",
+    body: JSON.stringify({
+      track_id: trackId,
+      recommendation_id: recommendationId,
+    }),
+  });
+}
+
+/**
+ * 재생 이벤트 로깅 — `POST /feedback/playback` (#48, FR6.2).
+ * @param event start | end | complete
+ * @param playbackPct 재생 진행률(0~100). 생략 가능.
+ */
+export async function playbackApi(
+  trackId: string,
+  event: PlaybackEvent,
+  playbackPct?: number
+): Promise<void> {
+  await authedFetch("/feedback/playback", {
+    method: "POST",
+    body: JSON.stringify({
+      track_id: trackId,
+      event,
+      ...(playbackPct !== undefined ? { playback_pct: playbackPct } : {}),
+    }),
+  });
+}
+
+/**
+ * 추천 이력 조회 — `GET /history?n=` (#50, FR6.5).
+ * @param n 최근 N개 (생략 시 백엔드 기본값).
+ */
+export async function historyApi(n?: number): Promise<HistoryItem[]> {
+  const query = n !== undefined ? `?n=${n}` : "";
+  const response = await authedFetch(`/history${query}`, { method: "GET" });
+  return response.json() as Promise<HistoryItem[]>;
 }
