@@ -119,7 +119,15 @@ def _process_aihub(json_dir: Path, wav_dir: Path, dst: Path, max_per_label: int 
     counts: dict[str, int] = {label: 0 for label in LABELS}
     total = 0
 
-    for json_path in sorted(json_dir.glob("*.json")):
+    json_files = sorted(json_dir.glob("*.json"))
+    n_files = len(json_files)
+    print(f"총 {n_files}개 파일 처리 시작...")
+
+    for i, json_path in enumerate(json_files, 1):
+        if i % 50 == 0 or i == 1:
+            pct = i / n_files * 100
+            print(f"  [{i}/{n_files}] {pct:.1f}% — 누적 {total}개 추출", flush=True)
+
         wav_path = wav_dir / (json_path.stem + ".wav")
         if not wav_path.exists():
             continue
