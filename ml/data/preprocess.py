@@ -153,8 +153,8 @@ def _process_aihub(json_dir: Path, wav_dir: Path, dst: Path, max_per_label: int 
             if counts[label] >= max_per_label:
                 continue
 
-            start = float(utt.get("StartTime", 0))
-            end = float(utt.get("EndTime", 0))
+            start = float(str(utt.get("StartTime", 0)).replace(",", ""))
+            end = float(str(utt.get("EndTime", 0)).replace(",", ""))
             if end - start < AIHUB_MIN_SEC:
                 continue
 
