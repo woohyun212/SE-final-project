@@ -92,6 +92,7 @@ def _seed_session_with_results(
     for rank, (track_id, catalog_i, score) in enumerate(tracks, start=1):
         if db.get(MusicCatalog, track_id) is None:
             db.add(_make_track(track_id, catalog_i))
+            db.flush()  # FK 참조 전 INSERT 확정
         db.add(RecommendationResult(
             session_id=session.id,
             track_id=track_id,

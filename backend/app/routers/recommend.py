@@ -112,7 +112,7 @@ async def recommend(
             session_id=session.id,
             track_id=track.track_id,
             rank=rank,
-            score=score,
+            score=round(score, 4),
         ))
     db.commit()
 

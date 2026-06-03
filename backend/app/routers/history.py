@@ -49,7 +49,7 @@ async def get_history(
                 title=catalog.track_name,
                 artist=catalog.artists,
                 rank=result.rank,
-                score=result.score,
+                score=round(result.score, 4),
             )
         )
 
