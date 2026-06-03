@@ -10,7 +10,6 @@
  * 건드리지 않는다. 본 파일은 #45/#46 전용 확장 타입을 독립적으로 보유한다.
  */
 
-import type { RecommendResponse } from './api';
 
 /** 추천 트랙 — 미래 백엔드 확장 응답 기준 (#38 + audio features). */
 export interface RecommendedTrack {
@@ -40,6 +39,8 @@ export interface EmotionPoint {
 
 /** `/recommend` 확장 응답 전체 (#38 RecommendResponse + 감정점). */
 export interface RecommendResult {
+  /** 추천 세션 식별자 (백엔드 session_id). 피드백 API(#47 /feedback/*) 연동 키. */
+  sessionId?: string;
   tracks: RecommendedTrack[];
   /** 사용자 감정 좌표 (음성 분석 결과). */
   userEmotion: EmotionPoint;
@@ -56,6 +57,7 @@ export interface RecommendResult {
  * 실 API 연동 시 이 상수를 `recommendApi()` 의 확장 응답으로 대체한다.
  */
 export const MOCK_RECOMMEND_RESULT: RecommendResult = {
+  sessionId: 'mock-session-1',
   userEmotion: { valence: 0.38, energy: 0.62, label: '현재 감정' },
   transcript: '오늘 하루가 길었지만 그래도 뭔가 해냈다는 기분이 들어.',
   tracks: [
@@ -142,8 +144,8 @@ export const MOCK_RECOMMEND_RESULT: RecommendResult = {
 
 const RECOMMEND_SESSION_KEY = 'se_emotion_music__recommend_result';
 
-/** 추천 결과를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
-export function saveRecommendResult(result: RecommendResponse): void {
+/** 추천 결과(도메인 RecommendResult)를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
+export function saveRecommendResult(result: RecommendResult): void {
   if (typeof window === 'undefined') return;
   try {
     window.sessionStorage.setItem(RECOMMEND_SESSION_KEY, JSON.stringify(result));
@@ -153,12 +155,12 @@ export function saveRecommendResult(result: RecommendResponse): void {
 }
 
 /** 저장된 추천 결과 로드. 없거나 파싱 실패 시 null. */
-export function loadRecommendResult(): RecommendResponse | null {
+export function loadRecommendResult(): RecommendResult | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(RECOMMEND_SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as RecommendResponse;
+    return JSON.parse(raw) as RecommendResult;
   } catch {
     return null;
   }
@@ -233,6 +235,7 @@ export function toRecommendResult(raw: unknown): RecommendResult {
       energy: number;
     };
     return {
+      sessionId: typeof o.session_id === 'string' ? o.session_id : undefined,
       tracks,
       userEmotion: { valence: ue.valence, energy: ue.energy },
       transcript: (o.transcript as string | null) ?? null,

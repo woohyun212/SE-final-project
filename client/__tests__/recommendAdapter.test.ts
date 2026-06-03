@@ -44,6 +44,8 @@ describe("toRecommendResult", () => {
     // user_emotion → userEmotion
     expect(result.userEmotion).toEqual({ valence: 0.38, energy: 0.62 });
     expect(result.transcript).toBe("오늘 좋았어");
+    // session_id → sessionId (피드백 API 연동 키, #47)
+    expect(result.sessionId).toBe("sess-1");
   });
 
   it("reason / preview_url 누락 시 null 로 채운다", () => {
