@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.music_catalog import MusicCatalog
-from app.models.recommendation import RecommendationSession
+from app.models.recommendation import RecommendationResult, RecommendationSession
 from app.routers.auth import get_current_user
 from app.schemas.context import ContextResult
 from app.schemas.recommend import (
@@ -99,13 +99,21 @@ async def recommend(
             context,
         )
 
-    # RecommendationSession: DB에 세션 저장
+    # RecommendationSession + 추천 결과 곡 DB 저장
     session = RecommendationSession(
         user_id=current_user.id,
         user_valence=emotion_vector["valence"],
         user_energy=emotion_vector["energy"],
     )
     db.add(session)
+    db.flush()  # session.id 확보
+    for rank, (track, score) in enumerate(catalog_tracks, start=1):
+        db.add(RecommendationResult(
+            session_id=session.id,
+            track_id=track.track_id,
+            rank=rank,
+            score=score,
+        ))
     db.commit()
 
     return RecommendResponse(
