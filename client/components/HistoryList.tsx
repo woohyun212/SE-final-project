@@ -2,13 +2,12 @@
  * HistoryList.tsx — 추천 이력 목록 컴포넌트 (#50, US-20).
  *
  * props-only. 상태는 각 항목의 펼침 토글만 로컬로 관리.
- * 각 HistoryItem 에서 feedbacks(피드백 남긴 곡)만 표시한다.
- * 백엔드 HistoryItem 에 추천 곡 전체가 포함되지 않으므로
- * 상세 패널은 "이 세션에서 피드백한 곡" 전용.
+ * 상세 패널은 해당 세션의 추천 곡 전체(recommended_tracks, rank 순)를 보여주고,
+ * 사용자가 남긴 피드백(feedbacks)은 곡별 배지로 매핑해 표시한다.
  */
 
 import { useState } from 'react';
-import type { HistoryItem, FeedbackEntry } from '../lib/recommend';
+import type { HistoryItem, RecommendedTrackEntry } from '../lib/recommend';
 import styles from '../styles/history.module.css';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,24 +43,31 @@ function feedbackBadgeProps(type: string): { className: string; label: string } 
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-interface FeedbackRowProps {
-  entry: FeedbackEntry;
+interface RecommendedRowProps {
+  entry: RecommendedTrackEntry;
+  /** 해당 곡에 사용자가 남긴 피드백 (없으면 배지 미표시). */
+  feedbackType?: string;
 }
 
-function FeedbackTrackRow({ entry }: FeedbackRowProps) {
-  const { className, label } = feedbackBadgeProps(entry.feedback_type);
+function RecommendedTrackRow({ entry, feedbackType }: RecommendedRowProps) {
+  const badge = feedbackType ? feedbackBadgeProps(feedbackType) : null;
   return (
     <li className={styles.feedbackRow}>
+      <span className={styles.rank} aria-hidden="true">
+        {entry.rank}
+      </span>
       <div className={styles.feedbackTrackInfo}>
         <span className={styles.feedbackTitle}>{entry.title}</span>
         <span className={styles.feedbackArtist}>{entry.artist}</span>
       </div>
-      <span
-        className={`${styles.badge} ${className}`}
-        aria-label={`피드백: ${label}`}
-      >
-        {label}
-      </span>
+      {badge && (
+        <span
+          className={`${styles.badge} ${badge.className}`}
+          aria-label={`피드백: ${badge.label}`}
+        >
+          {badge.label}
+        </span>
+      )}
     </li>
   );
 }
@@ -74,10 +80,17 @@ interface HistoryItemCardProps {
 function HistoryItemCard({ item, index }: HistoryItemCardProps) {
   const [open, setOpen] = useState(false);
 
+  const trackCount = item.recommended_tracks.length;
   const feedbackCount = item.feedbacks.length;
-  const sessionLabel = feedbackCount > 0
-    ? `피드백한 곡 ${feedbackCount}곡`
-    : '피드백 없음';
+  const feedbackByTrack = new Map(
+    item.feedbacks.map((f) => [f.track_id, f.feedback_type]),
+  );
+  const sortedTracks = [...item.recommended_tracks].sort(
+    (a, b) => a.rank - b.rank,
+  );
+  const sessionLabel =
+    `추천 ${trackCount}곡` +
+    (feedbackCount > 0 ? ` · 피드백 ${feedbackCount}` : '');
 
   return (
     <li
@@ -123,23 +136,27 @@ function HistoryItemCard({ item, index }: HistoryItemCardProps) {
         </span>
       </button>
 
-      {/* detail panel — feedback tracks */}
+      {/* detail panel — recommended tracks (rank 순) + 피드백 배지 */}
       {open && (
         <div
           id={`history-detail-${item.id}`}
           className={styles.detailPanel}
           role="region"
-          aria-label="이 세션에서 피드백한 곡"
+          aria-label="이 세션의 추천 곡"
         >
-          <p className={styles.detailLabel}>이 세션에서 피드백한 곡</p>
-          {feedbackCount > 0 ? (
-            <ul className={styles.feedbackList} aria-label="피드백 곡 목록">
-              {item.feedbacks.map((fb) => (
-                <FeedbackTrackRow key={fb.track_id} entry={fb} />
+          <p className={styles.detailLabel}>이 세션의 추천 곡</p>
+          {trackCount > 0 ? (
+            <ul className={styles.feedbackList} aria-label="추천 곡 목록">
+              {sortedTracks.map((t) => (
+                <RecommendedTrackRow
+                  key={t.track_id}
+                  entry={t}
+                  feedbackType={feedbackByTrack.get(t.track_id)}
+                />
               ))}
             </ul>
           ) : (
-            <p className={styles.noFeedback}>피드백한 곡이 없습니다.</p>
+            <p className={styles.noFeedback}>추천 곡이 없습니다.</p>
           )}
         </div>
       )}

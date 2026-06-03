@@ -95,6 +95,7 @@ describe("historyApi", () => {
         user_valence: 0.5,
         user_energy: 0.5,
         created_at: "2026-06-03",
+        recommended_tracks: [],
         feedbacks: [],
       },
     ];

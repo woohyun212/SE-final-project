@@ -60,12 +60,24 @@ export interface FeedbackEntry {
   feedback_type: string;
 }
 
+/** 추천 이력 항목의 추천 곡 엔트리 (백엔드 RecommendedTrackEntry, 항상 반환). */
+export interface RecommendedTrackEntry {
+  track_id: string;
+  title: string;
+  artist: string;
+  rank: number;
+  score: number;
+}
+
 /** 추천 이력 항목 (백엔드 GET /history → HistoryItem[]). */
 export interface HistoryItem {
   id: string;
   user_valence: number;
   user_energy: number;
   created_at: string;
+  /** 해당 세션에서 추천된 곡 전체 (rank 순). 백엔드가 항상 반환. */
+  recommended_tracks: RecommendedTrackEntry[];
+  /** 해당 세션에서 사용자가 남긴 피드백. */
   feedbacks: FeedbackEntry[];
 }
 
