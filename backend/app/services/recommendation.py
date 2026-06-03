@@ -6,7 +6,7 @@ from app.models.feedback import Feedback, FeedbackType
 from app.models.music_catalog import MusicCatalog
 
 _FEATURE_COLS = ("danceability", "energy", "valence", "acousticness", "instrumentalness")
-_PREF_WEIGHT = 0.3    # 좋아요 boost 계수
+_LIKE_WEIGHT = 0.3     # 좋아요 boost 계수
 _DISLIKE_WEIGHT = 0.2  # 싫어요 penalty 계수
 
 
@@ -62,7 +62,7 @@ def recommend_by_emotion(
     if user_id is not None:
         pref_vec, dislike_vec = _user_preference_vectors(db, user_id)
         if pref_vec is not None:
-            sims = sims + _PREF_WEIGHT * _cosine_sims(matrix, pref_vec)
+            sims = sims + _LIKE_WEIGHT * _cosine_sims(matrix, pref_vec)
         if dislike_vec is not None:
             sims = sims - _DISLIKE_WEIGHT * _cosine_sims(matrix, dislike_vec)
         sims = np.clip(sims, 0.0, None)
