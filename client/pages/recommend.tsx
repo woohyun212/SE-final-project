@@ -1,23 +1,25 @@
 /**
- * recommend.tsx — US-5 추천 곡 리스트 페이지 (#20)
+ * recommend.tsx — 추천 결과 화면 (#20 리스트 + #45 차트 + #46 이유).
  *
- * 추천 응답을 받아 RecommendationVisualizer 로 렌더. 실제 오디오 녹음은
- * US-3(#18) 작업 — 본 페이지는 임시 트리거 버튼으로 backend `/recommend`
- * 라운드트립을 검증한다. #18 머지 후 녹음된 Blob 을 그대로 넘기도록 교체.
+ * 녹음 화면(/)에서 sessionStorage 로 넘어온 추천 결과(RecommendResult)를 로드해
+ * 리스트·2D 감정차트·추천 이유를 모두 실데이터로 렌더한다. 직접 진입(저장값 없음)
+ * 시에는 수동 "추천 받기" 버튼으로 placeholder 오디오를 보내 라운드트립을 확인한다.
+ *
+ * 백엔드 /recommend 응답(snake_case·중첩)은 toRecommendResult 어댑터(#114)가
+ * 도메인 RecommendResult 로 변환한다.
  */
 
 import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import RecommendationVisualizer, {
-  type Track as VisualizerTrack,
-} from '../components/RecommendationVisualizer';
+import RecommendationVisualizer from '../components/RecommendationVisualizer';
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
 import { recommendApi, ApiError } from '../lib/api';
 import {
-  MOCK_RECOMMEND_RESULT,
+  type RecommendResult,
+  toRecommendResult,
   loadRecommendResult,
   clearRecommendResult,
 } from '../lib/recommend';
@@ -26,8 +28,7 @@ import { useAuthGuard } from '../lib/useAuthGuard';
 const FONT_URL =
   'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap';
 
-/** 임시 트리거용 더미 오디오 Blob. 백엔드는 audio 내용을 무시하고 더미 트랙을
- *  반환한다 (#18 머지 전까지의 placeholder). */
+/** 직접 진입 시 수동 트리거용 더미 오디오 Blob (placeholder). */
 function createPlaceholderAudio(): Blob {
   return new Blob([new Uint8Array(16)], { type: 'audio/wav' });
 }
@@ -35,18 +36,18 @@ function createPlaceholderAudio(): Blob {
 export default function RecommendPage() {
   useAuthGuard();
 
-  const [tracks, setTracks] = useState<VisualizerTrack[]>([]);
+  const [result, setResult] = useState<RecommendResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fromVoice, setFromVoice] = useState(false);
 
-  // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드해 리스트 렌더.
+  // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드.
   // 1회성 핸드오프 — 로드 직후 클리어해, 재녹음 없이 /recommend 재진입 시
-  // 옛 결과가 다시 뜨지 않도록 한다. 직접 진입(저장값 없음)이면 수동 버튼 동선 유지.
+  // 옛 결과가 다시 뜨지 않도록 한다.
   useEffect(() => {
     const stored = loadRecommendResult();
     if (stored && stored.tracks.length > 0) {
-      setTracks(stored.tracks);
+      setResult(stored);
       setFromVoice(true);
       clearRecommendResult();
     }
@@ -57,8 +58,8 @@ export default function RecommendPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await recommendApi(createPlaceholderAudio());
-      setTracks(response.tracks);
+      const raw = await recommendApi(createPlaceholderAudio());
+      setResult(toRecommendResult(raw));
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(
@@ -75,6 +76,9 @@ export default function RecommendPage() {
       setLoading(false);
     }
   }, []);
+
+  const tracks = result?.tracks ?? [];
+  const hasResult = tracks.length > 0;
 
   return (
     <>
@@ -140,34 +144,31 @@ export default function RecommendPage() {
           </Link>
         </div>
 
-        <RecommendationVisualizer
-          tracks={tracks}
-          loading={loading}
-          error={error}
-        />
+        <RecommendationVisualizer tracks={tracks} loading={loading} error={error} />
 
-        <section style={{ marginTop: 40 }}>
-          <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
-            감정-음악 매핑
-          </h2>
-          <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
-            내 감정과 추천 곡의 valence×energy 관계 (preview: mock 데이터)
-          </p>
-          <EmotionMusicChart
-            tracks={MOCK_RECOMMEND_RESULT.tracks}
-            userEmotion={MOCK_RECOMMEND_RESULT.userEmotion}
-          />
-        </section>
+        {hasResult && result && (
+          <>
+            <section style={{ marginTop: 40 }}>
+              <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
+                감정-음악 매핑
+              </h2>
+              <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
+                내 감정과 추천 곡의 valence×energy 관계
+              </p>
+              <EmotionMusicChart tracks={result.tracks} userEmotion={result.userEmotion} />
+            </section>
 
-        <section style={{ marginTop: 40 }}>
-          <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
-            추천 이유
-          </h2>
-          <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
-            각 곡을 추천한 이유 (preview: mock 데이터)
-          </p>
-          <RecommendationReasonList tracks={MOCK_RECOMMEND_RESULT.tracks} />
-        </section>
+            <section style={{ marginTop: 40 }}>
+              <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
+                추천 이유
+              </h2>
+              <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
+                각 곡을 추천한 이유
+              </p>
+              <RecommendationReasonList tracks={result.tracks} />
+            </section>
+          </>
+        )}
       </main>
     </>
   );

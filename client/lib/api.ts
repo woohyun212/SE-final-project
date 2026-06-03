@@ -24,18 +24,9 @@ export interface AccessTokenResponse {
   token_type: string;
 }
 
-/** `POST /recommend` 응답의 개별 추천 트랙 (백엔드 schemas/recommend.py Track). */
-export interface Track {
-  title: string;
-  artist: string;
-  album: string;
-  duration_sec: number;
-}
-
-/** `POST /recommend` 응답 본문 (백엔드 schemas/recommend.py RecommendResponse). */
-export interface RecommendResponse {
-  tracks: Track[];
-}
+// 추천 응답의 도메인 타입은 client/lib/recommend.ts 의 RecommendResult 로 일원화되었다.
+// recommendApi 는 raw 응답을 그대로 반환하고, 호출자가 toRecommendResult 로 변환한다
+// (백엔드 응답 shape 변경을 어댑터 한 곳에서 흡수 — #114/#123).
 
 // ── Error class ────────────────────────────────────────────────────────────
 
@@ -213,7 +204,7 @@ export async function authedFetch(
 export async function recommendApi(
   audio: Blob,
   filename = "recording.webm"
-): Promise<RecommendResponse> {
+): Promise<unknown> {
   const form = new FormData();
   form.append("audio", audio, filename);
 
@@ -221,5 +212,6 @@ export async function recommendApi(
     method: "POST",
     body: form,
   });
-  return response.json() as Promise<RecommendResponse>;
+  // raw 응답 — 호출자가 toRecommendResult 로 도메인 타입 변환.
+  return response.json() as Promise<unknown>;
 }

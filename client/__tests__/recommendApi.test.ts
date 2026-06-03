@@ -5,7 +5,7 @@
  * (브라우저가 boundary 설정), 저장된 access token 을 Bearer 로 첨부하는지 검증.
  */
 import { ApiError, recommendApi } from "../lib/api";
-import { saveTokens } from "../lib/auth";
+import { getAccessToken, saveTokens } from "../lib/auth";
 
 const realFetch = global.fetch;
 
@@ -58,5 +58,105 @@ describe("recommendApi", () => {
     }) as unknown as typeof fetch;
 
     await expect(recommendApi(new Blob(["x"]))).rejects.toBeInstanceOf(ApiError);
+  });
+
+  // ── 인증 필수화(#108 /recommend 에 get_current_user) 대응 경로 (#111) ──
+
+  it("토큰이 없으면 Authorization 헤더를 첨부하지 않는다 (익명 호출 형태)", async () => {
+    // localStorage 비어 있음 (afterEach 가 clear) — 미인증 상태.
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ tracks: [] }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await recommendApi(new Blob(["audio"], { type: "audio/webm" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
+  });
+
+  it("401 수신 시 refresh 후 같은 요청을 새 토큰으로 재시도해 성공한다", async () => {
+    saveTokens({
+      access_token: "old-tok",
+      refresh_token: "ref-123",
+      token_type: "bearer",
+    });
+
+    const fetchMock = jest.fn().mockImplementation((url: string) => {
+      if (url.endsWith("/auth/refresh")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ access_token: "new-tok", token_type: "bearer" }),
+        });
+      }
+      // /recommend: 첫 호출(old-tok)은 401, 재시도(new-tok)는 200
+      const recommendSoFar = fetchMock.mock.calls.filter((c: unknown[]) =>
+        (c[0] as string).endsWith("/recommend")
+      ).length;
+      if (recommendSoFar === 1) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: async () => ({ detail: "토큰이 만료되었습니다." }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ tracks: [] }),
+      });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await recommendApi(new Blob(["audio"]));
+    expect(res).toEqual({ tracks: [] });
+
+    const recommendCalls = fetchMock.mock.calls.filter((c) =>
+      (c[0] as string).endsWith("/recommend")
+    );
+    const refreshCalls = fetchMock.mock.calls.filter((c) =>
+      (c[0] as string).endsWith("/auth/refresh")
+    );
+    expect(recommendCalls).toHaveLength(2); // 401 → retry
+    expect(refreshCalls).toHaveLength(1);
+
+    // 재시도는 새 access token 으로
+    const retryInit = recommendCalls[1][1] as RequestInit;
+    const retryHeaders = retryInit.headers as Record<string, string>;
+    expect(retryHeaders.Authorization).toBe("Bearer new-tok");
+    expect(getAccessToken()).toBe("new-tok");
+  });
+
+  it("401 후 refresh 실패 시 ApiError(401) 를 던지고 저장된 토큰을 비운다", async () => {
+    saveTokens({
+      access_token: "old-tok",
+      refresh_token: "bad-ref",
+      token_type: "bearer",
+    });
+
+    const fetchMock = jest.fn().mockImplementation((url: string) => {
+      // refresh 도 401 → refresh token 무효
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: async () =>
+          url.endsWith("/auth/refresh")
+            ? { detail: "refresh 토큰이 유효하지 않습니다." }
+            : { detail: "토큰이 만료되었습니다." },
+      });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(recommendApi(new Blob(["x"]))).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+    });
+    // refresh 실패 경로에서 clearTokens 가 호출되어 저장 토큰이 비워진다.
+    expect(getAccessToken()).toBeNull();
   });
 });
