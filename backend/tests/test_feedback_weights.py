@@ -7,6 +7,8 @@ recommend_by_emotion()에 user_id를 전달할 때:
 - 점수 clip: 최종 점수 ≥ 0
 """
 
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +19,7 @@ from app.database import Base
 from app.models.feedback import Feedback, FeedbackType
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
+from app.models.user_preference import UserPreference, _FEATURE_COLS as PREF_COLS
 from app.services.recommendation import recommend_by_emotion
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -79,6 +82,34 @@ def _add_feedback(session, user_id: int, track_id: str, feedback_type: FeedbackT
         recommendation_id=rec.id,
         feedback_type=feedback_type,
     ))
+
+    # UserPreference 갱신 — feedback 라우터의 _upsert_preference 동작 모사
+    track = session.get(MusicCatalog, track_id)
+    pref = session.get(UserPreference, user_id)
+    if pref is None:
+        pref = UserPreference(
+            user_id=user_id,
+            like_danceability=0.0, like_energy=0.0, like_valence=0.0,
+            like_acousticness=0.0, like_instrumentalness=0.0, like_count=0,
+            dislike_danceability=0.0, dislike_energy=0.0, dislike_valence=0.0,
+            dislike_acousticness=0.0, dislike_instrumentalness=0.0, dislike_count=0,
+            updated_at=datetime.now(UTC),
+        )
+        session.add(pref)
+        session.flush()
+    track_vec = [getattr(track, f) for f in PREF_COLS]
+    if feedback_type == FeedbackType.like:
+        new_count = pref.like_count + 1
+        for f, v in zip(PREF_COLS, track_vec):
+            old = getattr(pref, f"like_{f}")
+            setattr(pref, f"like_{f}", old + (v - old) / new_count)
+        pref.like_count = new_count
+    else:
+        new_count = pref.dislike_count + 1
+        for f, v in zip(PREF_COLS, track_vec):
+            old = getattr(pref, f"dislike_{f}")
+            setattr(pref, f"dislike_{f}", old + (v - old) / new_count)
+        pref.dislike_count = new_count
     session.commit()
 
 

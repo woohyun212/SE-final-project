@@ -3,6 +3,7 @@ from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationResult, RecommendationSession
 from app.models.token import RefreshToken
 from app.models.user import User
+from app.models.user_preference import UserPreference
 
 __all__ = [
     "User",
@@ -13,4 +14,5 @@ __all__ = [
     "Feedback",
     "FeedbackType",
     "PlaybackEvent",
+    "UserPreference",
 ]
