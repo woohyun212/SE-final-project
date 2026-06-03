@@ -6,15 +6,16 @@ from app.models.feedback import Feedback, FeedbackType
 from app.models.music_catalog import MusicCatalog
 
 _FEATURE_COLS = ("danceability", "energy", "valence", "acousticness", "instrumentalness")
-_LIKE_WEIGHT = 0.3     # 좋아요 boost 계수
-_DISLIKE_WEIGHT = 0.2  # 싫어요 penalty 계수
+_LIKE_WEIGHT = 0.3     # 좋아요 boost 계수 — boost > penalty로 설정해 탐색 다양성 유지
+_DISLIKE_WEIGHT = 0.2  # 싫어요 penalty 계수 — 초기 경험적 값, 추후 A/B 튜닝 예정
 
 
-def _cosine_sims(matrix: np.ndarray, vec: np.ndarray) -> np.ndarray:
+def _cosine_sims(matrix: np.ndarray, vec: np.ndarray, row_norms: np.ndarray | None = None) -> np.ndarray:
     vec_norm = np.linalg.norm(vec)
     if vec_norm == 0.0:
         return np.zeros(len(matrix))
-    row_norms = np.linalg.norm(matrix, axis=1)
+    if row_norms is None:
+        row_norms = np.linalg.norm(matrix, axis=1)
     with np.errstate(invalid="ignore"):
         return np.where(row_norms == 0.0, 0.0, (matrix @ vec) / (row_norms * vec_norm))
 
@@ -56,15 +57,16 @@ def recommend_by_emotion(
     track_ids = [r[0] for r in rows]
     matrix = np.array([r[1:] for r in rows], dtype=np.float32)  # shape: (N, 5)
 
-    sims = _cosine_sims(matrix, query_vec)
+    row_norms = np.linalg.norm(matrix, axis=1)
+    sims = _cosine_sims(matrix, query_vec, row_norms)
 
     # 누적 피드백 가중치 반영 (cold start: user_id=None 또는 이력 없으면 건너뜀)
     if user_id is not None:
         pref_vec, dislike_vec = _user_preference_vectors(db, user_id)
         if pref_vec is not None:
-            sims = sims + _LIKE_WEIGHT * _cosine_sims(matrix, pref_vec)
+            sims = sims + _LIKE_WEIGHT * _cosine_sims(matrix, pref_vec, row_norms)
         if dislike_vec is not None:
-            sims = sims - _DISLIKE_WEIGHT * _cosine_sims(matrix, dislike_vec)
+            sims = sims - _DISLIKE_WEIGHT * _cosine_sims(matrix, dislike_vec, row_norms)
         sims = np.clip(sims, 0.0, None)
 
     k = min(top_k, len(sims))
