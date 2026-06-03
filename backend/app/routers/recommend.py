@@ -84,8 +84,8 @@ async def recommend(
     # EmotionFusion: VAD + Context → Spotify 특징 공간
     emotion_vector = fuse(vad.valence, vad.arousal, vad.dominance, context)
 
-    # RecommendationEngine: 코사인 유사도 — (catalog, score) 튜플 리스트
-    catalog_tracks = recommend_by_emotion(db, emotion_vector)
+    # RecommendationEngine: 코사인 유사도 + 누적 피드백 가중치 — (catalog, score) 튜플 리스트
+    catalog_tracks = recommend_by_emotion(db, emotion_vector, user_id=current_user.id)
 
     # ReasonGenerator: 각 추천 곡에 대한 LLM 이유 생성
     reasons: dict[str, str] = {}
