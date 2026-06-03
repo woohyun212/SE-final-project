@@ -168,5 +168,7 @@ describe("VoiceCapture", () => {
     expect(passed.tracks[0].energy).toBe(0.3);
     expect(passed.tracks[0].reason).toBe("추천 이유");
     expect(passed.userEmotion).toEqual({ valence: 0.4, energy: 0.6 });
+    expect(passed.transcript).toBe("전사");
+    expect(passed.sessionId).toBe("s-1");
   });
 });

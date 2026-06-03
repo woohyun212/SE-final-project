@@ -39,6 +39,8 @@ export interface EmotionPoint {
 
 /** `/recommend` 확장 응답 전체 (#38 RecommendResponse + 감정점). */
 export interface RecommendResult {
+  /** 추천 세션 식별자 (백엔드 session_id). 피드백 API(#47 /feedback/*) 연동 키. */
+  sessionId?: string;
   tracks: RecommendedTrack[];
   /** 사용자 감정 좌표 (음성 분석 결과). */
   userEmotion: EmotionPoint;
@@ -55,6 +57,7 @@ export interface RecommendResult {
  * 실 API 연동 시 이 상수를 `recommendApi()` 의 확장 응답으로 대체한다.
  */
 export const MOCK_RECOMMEND_RESULT: RecommendResult = {
+  sessionId: 'mock-session-1',
   userEmotion: { valence: 0.38, energy: 0.62, label: '현재 감정' },
   transcript: '오늘 하루가 길었지만 그래도 뭔가 해냈다는 기분이 들어.',
   tracks: [
@@ -232,6 +235,7 @@ export function toRecommendResult(raw: unknown): RecommendResult {
       energy: number;
     };
     return {
+      sessionId: typeof o.session_id === 'string' ? o.session_id : undefined,
       tracks,
       userEmotion: { valence: ue.valence, energy: ue.energy },
       transcript: (o.transcript as string | null) ?? null,
