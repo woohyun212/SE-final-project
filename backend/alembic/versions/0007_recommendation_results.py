@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table(
         "recommendation_results",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-        sa.Column("session_id", sa.String(36), sa.ForeignKey("recommendation_sessions.id"), nullable=False),
+        sa.Column("session_id", sa.String(36), sa.ForeignKey("recommendation_sessions.id", ondelete="CASCADE"), nullable=False),
         sa.Column("track_id", sa.String(64), sa.ForeignKey("music_catalog.track_id"), nullable=False),
         sa.Column("rank", sa.Integer(), nullable=False),
         sa.Column("score", sa.Float(), nullable=False),

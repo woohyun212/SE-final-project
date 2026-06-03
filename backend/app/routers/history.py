@@ -35,7 +35,7 @@ async def get_history(
     # 추천 결과 곡 단일 쿼리 (N+1 회피)
     result_rows = (
         db.query(RecommendationResult, MusicCatalog)
-        .join(MusicCatalog, RecommendationResult.track_id == MusicCatalog.track_id)
+        .outerjoin(MusicCatalog, RecommendationResult.track_id == MusicCatalog.track_id)
         .filter(RecommendationResult.session_id.in_(session_ids))
         .order_by(RecommendationResult.session_id, RecommendationResult.rank)
         .all()
@@ -43,6 +43,8 @@ async def get_history(
 
     tracks_by_session: dict[str, list[RecommendedTrackEntry]] = defaultdict(list)
     for result, catalog in result_rows:
+        if catalog is None:
+            continue
         tracks_by_session[result.session_id].append(
             RecommendedTrackEntry(
                 track_id=catalog.track_id,
