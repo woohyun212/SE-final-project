@@ -4,14 +4,14 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import torch
-from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor
+from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForSequenceClassification
 
 from serve.audio_preprocess import preprocess
-from train.dataset import ID2LABEL, VAD_MAP, SAMPLING_RATE, MAX_DURATION_SEC
+from train.dataset import ID2LABEL, MAX_DURATION_SEC, SAMPLING_RATE, VAD_MAP
 
 MODEL_DIR = str(Path(__file__).parent.parent / "model" / "best")
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+CONFIDENCE_THRESHOLD = 0.4
 
 _model: Wav2Vec2ForSequenceClassification | None = None
 _extractor: Wav2Vec2FeatureExtractor | None = None
@@ -28,7 +28,9 @@ def load_model() -> None:
 
 
 def predict(audio_bytes: bytes) -> dict:
-    """음성 바이트 → 감정 벡터 (valence, arousal, dominance) + 레이블 + 확률"""
+    """음성 바이트 → 감정 벡터 (valence, arousal, dominance) + 레이블 + 확률
+    confidence는 top 예측 클래스의 softmax 확률. CONFIDENCE_THRESHOLD 미만이면 neutral fallback.
+    """
     if _model is None or _extractor is None:
         raise RuntimeError("모델이 로드되지 않았습니다. 서버 재시작이 필요합니다.")
 
@@ -52,11 +54,7 @@ def predict(audio_bytes: bytes) -> dict:
     pred_id = int(torch.argmax(logits))
     confidence = round(max(probs), 4)
 
-    # 신뢰도 낮으면 neutral fallback
-    if confidence < 0.4:
-        pred_label = "neutral"
-    else:
-        pred_label = ID2LABEL[pred_id]
+    pred_label = "neutral" if confidence < CONFIDENCE_THRESHOLD else ID2LABEL[pred_id]
     valence, arousal, dominance = VAD_MAP[pred_label]
 
     return {
