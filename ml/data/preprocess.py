@@ -111,10 +111,9 @@ AIHUB_MAX_PER_LABEL = 2000  # 레이블당 최대 샘플 수 (불균형 방지)
 def _process_aihub(json_dir: Path, wav_dir: Path, dst: Path, max_per_label: int = AIHUB_MAX_PER_LABEL) -> int:
     """AIHub JSON 라벨 + WAV → 발화 단위로 잘라 data/raw/<label>/ 에 저장."""
     try:
-        import numpy as np
         import soundfile as sf
     except ImportError:
-        raise RuntimeError("soundfile/numpy 필요: pip install soundfile numpy")
+        raise RuntimeError("soundfile 필요: pip install soundfile")
 
     counts: dict[str, int] = {label: 0 for label in LABELS}
     total = 0
@@ -124,6 +123,9 @@ def _process_aihub(json_dir: Path, wav_dir: Path, dst: Path, max_per_label: int 
     print(f"총 {n_files}개 파일 처리 시작...")
 
     for i, json_path in enumerate(json_files, 1):
+        if all(c >= max_per_label for c in counts.values()):
+            print(f"  모든 레이블 상한 도달 — 조기 종료 ({i}/{n_files})")
+            break
         if i % 50 == 0 or i == 1:
             pct = i / n_files * 100
             print(f"  [{i}/{n_files}] {pct:.1f}% — 누적 {total}개 추출", flush=True)
@@ -174,7 +176,8 @@ def _process_aihub(json_dir: Path, wav_dir: Path, dst: Path, max_per_label: int 
 
             out_dir = dst / label
             out_dir.mkdir(parents=True, exist_ok=True)
-            fname = f"aihub_{json_path.stem}_{utt['TextNo']}.wav"
+            text_no = utt.get("TextNo", f"unk_{i:06d}")
+            fname = f"aihub_{json_path.stem}_{text_no}.wav"
             sf.write(str(out_dir / fname), segment, sr)
             counts[label] += 1
             total += 1
