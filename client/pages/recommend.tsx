@@ -16,9 +16,11 @@ import { useCallback, useEffect, useState } from 'react';
 import RecommendationVisualizer from '../components/RecommendationVisualizer';
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
+import FeedbackButtons from '../components/FeedbackButtons';
 import { recommendApi, ApiError } from '../lib/api';
 import {
   type RecommendResult,
+  type FeedbackType,
   toRecommendResult,
   loadRecommendResult,
   clearRecommendResult,
@@ -40,6 +42,8 @@ export default function RecommendPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fromVoice, setFromVoice] = useState(false);
+  /** 곡별 피드백 상태 — key: track_id, value: 'like' | 'dislike' (#47). */
+  const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
 
   // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드.
   // 1회성 핸드오프 — 로드 직후 클리어해, 재녹음 없이 /recommend 재진입 시
@@ -142,9 +146,39 @@ export default function RecommendPage() {
           >
             홈
           </Link>
+          <Link
+            href="/history"
+            style={{
+              padding: '10px 18px',
+              borderRadius: 8,
+              background: '#f0f4f8',
+              color: '#1976D2',
+              fontWeight: 500,
+              fontSize: '0.95rem',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            추천 이력
+          </Link>
         </div>
 
-        <RecommendationVisualizer tracks={tracks} loading={loading} error={error} />
+        <RecommendationVisualizer
+          tracks={tracks}
+          loading={loading}
+          error={error}
+          renderRowActions={(t) => (
+            <FeedbackButtons
+              trackId={t.track_id ?? ''}
+              recommendationId={result?.sessionId}
+              value={feedback[t.track_id ?? ''] ?? null}
+              onChange={(v) =>
+                setFeedback((prev) => ({ ...prev, [t.track_id ?? '']: v }))
+              }
+            />
+          )}
+        />
 
         {hasResult && result && (
           <>
