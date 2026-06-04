@@ -19,6 +19,8 @@ export interface Track {
   artist: string;
   album: string;
   duration_sec: number;
+  /** 30초 미리듣기 URL — 재생 버튼 활성 조건 (#48). 선택(하위호환). */
+  preview_url?: string | null;
 }
 
 export interface RecommendationVisualizerProps {
