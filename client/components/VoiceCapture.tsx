@@ -10,7 +10,8 @@
  */
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiError, recommendApi, type RecommendResponse } from "../lib/api";
+import { ApiError, recommendApi } from "../lib/api";
+import { toRecommendResult, type RecommendResult } from "../lib/recommend";
 import {
   MAX_DURATION_MS,
   MIN_DURATION_MS,
@@ -23,7 +24,7 @@ type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 export interface VoiceCaptureProps {
   /** 업로드 성공 시 추천 결과를 상위로 전달 (US-5 곡 리스트 연결 지점). */
-  onResult?: (result: RecommendResponse) => void;
+  onResult?: (result: RecommendResult) => void;
 }
 
 const MAX_SECONDS = MAX_DURATION_MS / 1000;
@@ -43,7 +44,8 @@ export default function VoiceCapture({ onResult }: VoiceCaptureProps) {
       setUploadStatus("uploading");
       setUploadError(null);
       try {
-        const result = await recommendApi(blob);
+        const raw = await recommendApi(blob);
+        const result = toRecommendResult(raw);
         setTrackCount(result.tracks.length);
         setUploadStatus("success");
         onResult?.(result);

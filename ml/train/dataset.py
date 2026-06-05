@@ -70,9 +70,10 @@ def preprocess_batch(samples: list[EmotionSample], extractor: Wav2Vec2FeatureExt
         waveforms,
         sampling_rate=SAMPLING_RATE,
         return_tensors="pt",
-        padding=True,
+        padding="max_length",
         truncation=True,
         max_length=MAX_DURATION_SEC * SAMPLING_RATE,
+        return_attention_mask=True,
     )
     import torch
     inputs["labels"] = torch.tensor([s.label_id for s in samples], dtype=torch.long)

@@ -10,7 +10,6 @@
  * 건드리지 않는다. 본 파일은 #45/#46 전용 확장 타입을 독립적으로 보유한다.
  */
 
-import type { RecommendResponse } from './api';
 
 /** 추천 트랙 — 미래 백엔드 확장 응답 기준 (#38 + audio features). */
 export interface RecommendedTrack {
@@ -40,6 +39,8 @@ export interface EmotionPoint {
 
 /** `/recommend` 확장 응답 전체 (#38 RecommendResponse + 감정점). */
 export interface RecommendResult {
+  /** 추천 세션 식별자 (백엔드 session_id). 피드백 API(#47 /feedback/*) 연동 키. */
+  sessionId?: string;
   tracks: RecommendedTrack[];
   /** 사용자 감정 좌표 (음성 분석 결과). */
   userEmotion: EmotionPoint;
@@ -56,6 +57,7 @@ export interface RecommendResult {
  * 실 API 연동 시 이 상수를 `recommendApi()` 의 확장 응답으로 대체한다.
  */
 export const MOCK_RECOMMEND_RESULT: RecommendResult = {
+  sessionId: 'mock-session-1',
   userEmotion: { valence: 0.38, energy: 0.62, label: '현재 감정' },
   transcript: '오늘 하루가 길었지만 그래도 뭔가 해냈다는 기분이 들어.',
   tracks: [
@@ -142,8 +144,8 @@ export const MOCK_RECOMMEND_RESULT: RecommendResult = {
 
 const RECOMMEND_SESSION_KEY = 'se_emotion_music__recommend_result';
 
-/** 추천 결과를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
-export function saveRecommendResult(result: RecommendResponse): void {
+/** 추천 결과(도메인 RecommendResult)를 sessionStorage 에 저장 (SSR/제한 환경 가드). */
+export function saveRecommendResult(result: RecommendResult): void {
   if (typeof window === 'undefined') return;
   try {
     window.sessionStorage.setItem(RECOMMEND_SESSION_KEY, JSON.stringify(result));
@@ -153,12 +155,12 @@ export function saveRecommendResult(result: RecommendResponse): void {
 }
 
 /** 저장된 추천 결과 로드. 없거나 파싱 실패 시 null. */
-export function loadRecommendResult(): RecommendResponse | null {
+export function loadRecommendResult(): RecommendResult | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(RECOMMEND_SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as RecommendResponse;
+    return JSON.parse(raw) as RecommendResult;
   } catch {
     return null;
   }
@@ -172,4 +174,104 @@ export function clearRecommendResult(): void {
   } catch {
     // ignore
   }
+}
+
+// ── 백엔드 응답 어댑터 (#107/#108 → 도메인 RecommendResult) ──────────────────
+//
+// 백엔드 `POST /recommend` 응답(snake_case·중첩)을 프레젠테이션 컴포넌트가 쓰는
+// 도메인 타입으로 변환하는 **단일 경계**. 백엔드가 필드명을 바꿔도
+// (예: emotion_vector → track_features, recommendation_id → session_id) 이 함수만
+// 고치면 소비처(VoiceCapture / recommend.tsx / 차트 / 이유카드)는 영향이 없다.
+//
+// 현행 backend 머지본 기준 raw shape:
+//   { session_id, recommendations: [{ track{track_id,title,artist,album,
+//     duration_sec,preview_url?}, score, reason?, track_features{valence,energy} }],
+//     user_emotion{valence,energy}, transcript?, context? }
+
+/** 백엔드 RecommendResponse 의 개별 추천 항목 raw shape. 어댑터 입력 전용. */
+interface RawRecommendationItem {
+  track: {
+    track_id: string;
+    title: string;
+    artist: string;
+    album: string;
+    duration_sec: number;
+    preview_url?: string | null;
+  };
+  score: number;
+  reason?: string | null;
+  track_features: { valence: number; energy: number };
+}
+
+const NEUTRAL = 0.5;
+
+/**
+ * 백엔드 `/recommend` 응답(raw)을 도메인 `RecommendResult` 로 변환.
+ *
+ * - 새 shape(`recommendations[]` + `track_features` + `user_emotion`): 전 필드 매핑.
+ * - 옛 shape(`{ tracks: [...] }`, transition fallback): valence/energy/reason 미제공이라
+ *   중립값(0.5)/null 로 채움 — 리스트만 실데이터, 차트/이유는 호출자가 mock fallback.
+ * - 알 수 없는 형태: 빈 결과.
+ */
+export function toRecommendResult(raw: unknown): RecommendResult {
+  const o = (raw ?? {}) as Record<string, unknown>;
+
+  // 새 shape (#107)
+  if (Array.isArray(o.recommendations)) {
+    const items = o.recommendations as RawRecommendationItem[];
+    const tracks: RecommendedTrack[] = items.map((it) => ({
+      track_id: it.track.track_id,
+      title: it.track.title,
+      artist: it.track.artist,
+      album: it.track.album,
+      duration_sec: it.track.duration_sec,
+      preview_url: it.track.preview_url ?? null,
+      valence: it.track_features.valence,
+      energy: it.track_features.energy,
+      reason: it.reason ?? null,
+    }));
+    const ue = (o.user_emotion ?? { valence: NEUTRAL, energy: NEUTRAL }) as {
+      valence: number;
+      energy: number;
+    };
+    return {
+      sessionId: typeof o.session_id === 'string' ? o.session_id : undefined,
+      tracks,
+      userEmotion: { valence: ue.valence, energy: ue.energy },
+      transcript: (o.transcript as string | null) ?? null,
+    };
+  }
+
+  // 옛 shape (transition fallback)
+  if (Array.isArray(o.tracks)) {
+    const legacy = o.tracks as Array<{
+      title: string;
+      artist: string;
+      album: string;
+      duration_sec: number;
+      track_id?: string;
+    }>;
+    const tracks: RecommendedTrack[] = legacy.map((t, i) => ({
+      track_id: t.track_id ?? `legacy-${i}`,
+      title: t.title,
+      artist: t.artist,
+      album: t.album,
+      duration_sec: t.duration_sec,
+      preview_url: null,
+      valence: NEUTRAL,
+      energy: NEUTRAL,
+      reason: null,
+    }));
+    return {
+      tracks,
+      userEmotion: { valence: NEUTRAL, energy: NEUTRAL },
+      transcript: null,
+    };
+  }
+
+  return {
+    tracks: [],
+    userEmotion: { valence: NEUTRAL, energy: NEUTRAL },
+    transcript: null,
+  };
 }
