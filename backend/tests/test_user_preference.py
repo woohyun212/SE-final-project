@@ -12,7 +12,7 @@ import app.models  # noqa: F401
 from app.database import Base, get_db
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
-from app.models.user_preference import UserPreference, _FEATURE_COLS
+from app.models.user_preference import UserPreference
 from app.routers.auth import get_current_user
 from app.routers.feedback import router as feedback_router
 from app.services.recommendation import recommend_by_emotion
