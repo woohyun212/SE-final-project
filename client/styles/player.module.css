@@ -1,0 +1,80 @@
+/* ─────────────────────────────────────────────────────────────
+   player.module.css — 미리듣기 재생/일시정지 버튼 (#48)
+   팔레트: feedback.module.css 와 동일한 CSS 변수 체계 미러
+   ───────────────────────────────────────────────────────────── */
+
+.playBtn {
+  --pl-accent: #1976D2;
+  --pl-accent-bg: #dbeafe;
+  --pl-accent-hover: #1565c0;
+  --pl-idle-color: #9ca3af;
+  --pl-idle-border: rgba(0, 0, 0, 0.10);
+  --pl-disabled-color: #d1d5db;
+  --pl-ring: rgba(25, 118, 210, 0.35);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--pl-idle-border);
+  background: transparent;
+  color: var(--pl-idle-color);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  padding: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .playBtn {
+    --pl-accent: #58a6ff;
+    --pl-accent-bg: #1e2d3d;
+    --pl-accent-hover: #79b8ff;
+    --pl-idle-color: #484f58;
+    --pl-idle-border: rgba(255, 255, 255, 0.10);
+    --pl-disabled-color: #30363d;
+    --pl-ring: rgba(88, 166, 255, 0.30);
+  }
+}
+
+.playBtn:focus-visible {
+  box-shadow: 0 0 0 3px var(--pl-ring);
+}
+
+.playBtn:hover:not(:disabled) {
+  color: var(--pl-accent);
+  border-color: transparent;
+  background: var(--pl-accent-bg);
+  transform: scale(1.08);
+}
+
+.playBtn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.playBtn:disabled {
+  color: var(--pl-disabled-color);
+  border-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ── 재생 중 상태 ── */
+.playing {
+  color: var(--pl-accent);
+  background: var(--pl-accent-bg);
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--pl-accent);
+}
+
+.playing:hover:not(:disabled) {
+  color: var(--pl-accent-hover);
+}
