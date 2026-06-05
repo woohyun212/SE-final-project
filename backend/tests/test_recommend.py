@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 import app.models  # noqa: F401
 from app.database import Base, get_db
+from app.models.recommendation import RecommendationResult
 from app.routers.auth import get_current_user
 from app.routers.recommend import router
 from app.services.ml_client import MLClient, VADResult, get_ml_client
@@ -86,7 +87,7 @@ def _make_mock_stt(transcript: str = ""):
 
 def _make_mock_reason_gen(reasons: dict[str, str] | None = None):
     mock = MagicMock(spec=ReasonGenerator)
-    mock.generate = AsyncMock(return_value=reasons or {})
+    mock.generate = AsyncMock(return_value=(reasons or {}, False))
     return mock
 
 
@@ -291,3 +292,28 @@ def test_recommend_reason_none_when_generator_disabled() -> None:
     assert res.status_code == 200
     for item in res.json()["recommendations"]:
         assert item["reason"] is None
+
+
+def test_recommend_saves_results_to_db(client: TestClient) -> None:
+    """POST /recommend 후 추천 결과 곡이 recommendation_results 테이블에 저장된다."""
+    res = client.post("/recommend", files=_audio_file())
+    assert res.status_code == 200
+    body = res.json()
+    session_id = body["session_id"]
+    expected_count = len(body["recommendations"])
+
+    db = TestingSessionLocal()
+    results = (
+        db.query(RecommendationResult)
+        .filter_by(session_id=session_id)
+        .order_by(RecommendationResult.rank)
+        .all()
+    )
+    db.close()
+
+    assert len(results) == expected_count
+    assert [r.rank for r in results] == list(range(1, expected_count + 1))
+    assert all(isinstance(r.score, float) for r in results)
+    saved_ids = {r.track_id for r in results}
+    response_ids = {item["track"]["track_id"] for item in body["recommendations"]}
+    assert saved_ids == response_ids
