@@ -11,10 +11,10 @@ import io
 from contextlib import asynccontextmanager
 
 import soundfile as sf
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from serve.predictor import predict, load_model
+from serve.predictor import load_model, predict
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ class EmotionVector(BaseModel):
     valence: float
     arousal: float
     dominance: float
+    confidence: float
     probabilities: dict[str, float]
 
 
@@ -40,7 +41,7 @@ def health():
 
 
 @app.post("/predict", response_model=EmotionVector)
-async def predict_emotion(audio: UploadFile = File(...)):
+async def predict_emotion(audio: UploadFile = File(default=...)):
     audio_bytes = await audio.read()
     if len(audio_bytes) == 0:
         raise HTTPException(status_code=400, detail="빈 파일")
@@ -53,6 +54,6 @@ async def predict_emotion(audio: UploadFile = File(...)):
     try:
         result = predict(audio_bytes)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     return result

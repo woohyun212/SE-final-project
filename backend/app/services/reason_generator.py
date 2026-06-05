@@ -16,6 +16,27 @@ _PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "recommendation
 _REASON_TIMEOUT = float(os.getenv("REASON_GENERATOR_TIMEOUT", "15"))
 
 
+def _rule_based_reason(track: MusicCatalog) -> str:
+    parts: list[str] = []
+    if track.valence >= 0.7:
+        parts.append("밝고 긍정적인 에너지")
+    elif track.valence <= 0.3:
+        parts.append("감성적이고 잔잔한 무드")
+    if track.energy >= 0.7:
+        parts.append("활기찬 비트")
+    elif track.energy <= 0.3:
+        parts.append("차분한 템포")
+    if track.acousticness >= 0.7:
+        parts.append("어쿠스틱한 감성")
+    if track.danceability >= 0.7:
+        parts.append("흥겨운 리듬감")
+    if track.instrumentalness >= 0.5:
+        parts.append("집중하기 좋은 연주")
+    if not parts:
+        parts.append("현재 감정 상태에 어울리는 분위기")
+    return f"{', '.join(parts)}의 곡으로 현재 감정과 잘 어울립니다."
+
+
 def _load_prompt_template() -> str:
     return _PROMPT_PATH.read_text(encoding="utf-8")
 
@@ -36,9 +57,10 @@ class ReasonGenerator:
         arousal: float,
         dominance: float,
         context: ContextResult | None = None,
-    ) -> dict[str, str]:
+    ) -> tuple[dict[str, str], bool]:
+        """LLM으로 추천 이유 생성. 실패 시 (rule-based 결과, True) 반환."""
         if not tracks:
-            return {}
+            return {}, False
 
         tracks_data = [
             {
@@ -89,13 +111,13 @@ class ReasonGenerator:
                 raw = match.group(1)
             data = json.loads(raw)
             valid_ids = {t.track_id for t in tracks}
-            return {k: str(v) for k, v in data.items() if k in valid_ids}
+            return {k: str(v) for k, v in data.items() if k in valid_ids}, False
         except TimeoutError:
-            logger.warning("ReasonGenerator timed out after %.1fs", _REASON_TIMEOUT)
-            return {}
+            logger.warning("ReasonGenerator timed out after %.1fs — rule-based fallback", _REASON_TIMEOUT)
+            return {t.track_id: _rule_based_reason(t) for t in tracks}, True
         except Exception as exc:
-            logger.warning("ReasonGenerator failed: %s", exc)
-            return {}
+            logger.warning("ReasonGenerator failed: %s — rule-based fallback", exc)
+            return {t.track_id: _rule_based_reason(t) for t in tracks}, True
 
 
 _generator: ReasonGenerator | None = None
