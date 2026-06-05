@@ -24,7 +24,8 @@ from transformers import TrainingArguments, Trainer
 
 transformers.logging.enable_progress_bar()
 
-from train.dataset import scan_dataset, preprocess_batch
+from train.augment import augment
+from train.dataset import scan_dataset, preprocess_batch, load_audio, SAMPLING_RATE
 from train.model import build_model, build_extractor
 
 
@@ -35,20 +36,50 @@ def compute_metrics(eval_pred):
 
 
 class EmotionDataset:
-    def __init__(self, samples, extractor):
+    def __init__(self, samples, extractor, augment_audio: bool = False):
         self.samples = samples
         self.extractor = extractor
+        self.augment_audio = augment_audio
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        batch = preprocess_batch([self.samples[idx]], self.extractor)
+        sample = self.samples[idx]
+        if self.augment_audio:
+            audio = load_audio(sample.path)
+            audio = augment(audio, SAMPLING_RATE)
+            import torch
+            inputs = self.extractor(
+                [audio],
+                sampling_rate=SAMPLING_RATE,
+                return_tensors="pt",
+                padding="max_length",
+                truncation=True,
+                max_length=10 * SAMPLING_RATE,
+                return_attention_mask=True,
+            )
+            inputs["labels"] = torch.tensor([sample.label_id], dtype=torch.long)
+        else:
+            inputs = preprocess_batch([sample], self.extractor)
         return {
-            "input_values": batch["input_values"][0],
-            "attention_mask": batch["attention_mask"][0],
-            "labels": batch["labels"][0],
+            "input_values": inputs["input_values"][0],
+            "attention_mask": inputs["attention_mask"][0],
+            "labels": inputs["labels"][0],
         }
+
+
+def _oversample_minority(samples, min_count: int = 1000):
+    """소수 클래스를 min_count 이상으로 복제해 불균형 완화."""
+    from collections import Counter
+    counts = Counter(s.label_id for s in samples)
+    result = list(samples)
+    for label_id, count in counts.items():
+        if count < min_count:
+            shortage = min_count - count
+            minority = [s for s in samples if s.label_id == label_id]
+            result += (minority * (shortage // len(minority) + 1))[:shortage]
+    return result
 
 
 def main():
@@ -60,6 +91,8 @@ def main():
     parser.add_argument("--lr", type=float, default=3e-5)
     parser.add_argument("--fp16", action="store_true", default=True)
     parser.add_argument("--test_size", type=float, default=0.2)
+    parser.add_argument("--augment", action="store_true", default=False)
+    parser.add_argument("--oversample", action="store_true", default=False)
     args = parser.parse_args()
 
     samples = scan_dataset(args.data_dir)
@@ -69,6 +102,8 @@ def main():
     train_samples, eval_samples = train_test_split(
         samples, test_size=args.test_size, stratify=[s.label_id for s in samples], random_state=42
     )
+    if args.oversample:
+        train_samples = _oversample_minority(train_samples)
     print(f"Train: {len(train_samples)}, Eval: {len(eval_samples)}")
 
     extractor = build_extractor()
@@ -98,7 +133,7 @@ def main():
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=EmotionDataset(train_samples, extractor),
+        train_dataset=EmotionDataset(train_samples, extractor, augment_audio=args.augment),
         eval_dataset=EmotionDataset(eval_samples, extractor),
         compute_metrics=compute_metrics,
     )

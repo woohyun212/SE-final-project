@@ -3,18 +3,30 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.music_catalog import MusicCatalog
+from app.models.user_preference import _FEATURE_COLS, UserPreference
 
-_FEATURE_COLS = ("danceability", "energy", "valence", "acousticness", "instrumentalness")
+_LIKE_WEIGHT = 0.3
+_DISLIKE_WEIGHT = 0.3
+
+
+def _cosine_sims(matrix: np.ndarray, vec: np.ndarray, row_norms: np.ndarray | None = None) -> np.ndarray:
+    vec_norm = np.linalg.norm(vec)
+    if vec_norm == 0.0:
+        return np.zeros(len(matrix))
+    if row_norms is None:
+        row_norms = np.linalg.norm(matrix, axis=1)
+    with np.errstate(invalid="ignore"):
+        return np.where(row_norms == 0.0, 0.0, (matrix @ vec) / (row_norms * vec_norm))
 
 
 def recommend_by_emotion(
     db: Session,
     emotion_vector: dict[str, float],
+    user_id: int | None = None,
     top_k: int = 10,
 ) -> list[tuple[MusicCatalog, float]]:
     query_vec = np.array([emotion_vector.get(f, 0.5) for f in _FEATURE_COLS], dtype=np.float32)
 
-    # audio features 컬럼과 track_id만 조회 — ORM 객체 전체 로드 불필요
     cols = [getattr(MusicCatalog, f) for f in _FEATURE_COLS]
     rows = db.execute(select(MusicCatalog.track_id, *cols)).all()
 
@@ -24,17 +36,22 @@ def recommend_by_emotion(
     track_ids = [r[0] for r in rows]
     matrix = np.array([r[1:] for r in rows], dtype=np.float32)  # shape: (N, 5)
 
-    # 코사인 유사도: (matrix @ query) / (||matrix|| * ||query||)
-    query_norm = np.linalg.norm(query_vec)
-    if query_norm == 0.0:
-        sims = np.zeros(len(rows))
-    else:
-        dot = matrix @ query_vec
-        row_norms = np.linalg.norm(matrix, axis=1)
-        with np.errstate(invalid="ignore"):
-            sims = np.where(row_norms == 0.0, 0.0, dot / (row_norms * query_norm))
+    row_norms = np.linalg.norm(matrix, axis=1)
+    sims = _cosine_sims(matrix, query_vec, row_norms)
 
-    # argpartition으로 top-k 추출 (전체 정렬보다 O(N) 수준)
+    # 사용자 프로필 O(1) PK 조회 — 피드백 풀스캔 대체
+    if user_id is not None:
+        pref = db.get(UserPreference, user_id)
+        if pref is not None:
+            if pref.like_count > 0:
+                like_vec = np.array([getattr(pref, f"like_{f}") for f in _FEATURE_COLS], dtype=np.float32)
+                sims = sims + _LIKE_WEIGHT * _cosine_sims(matrix, like_vec, row_norms)
+            if pref.dislike_count > 0:
+                dislike_vec = np.array([getattr(pref, f"dislike_{f}") for f in _FEATURE_COLS], dtype=np.float32)
+                sims = sims - _DISLIKE_WEIGHT * _cosine_sims(matrix, dislike_vec, row_norms)
+
+    sims = np.clip(sims, 0.0, 1.0)
+
     k = min(top_k, len(sims))
     if k == len(sims):
         top_indices = np.argsort(sims)[::-1]
@@ -45,7 +62,6 @@ def recommend_by_emotion(
     top_ids = [track_ids[i] for i in top_indices]
     top_scores = [float(sims[i]) for i in top_indices]
 
-    # top-k track_id로만 ORM 객체 재조회
     result_map = {r.track_id: r for r in db.query(MusicCatalog).filter(MusicCatalog.track_id.in_(top_ids)).all()}
     return [
         (result_map[tid], score)
