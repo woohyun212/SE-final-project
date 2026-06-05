@@ -93,6 +93,8 @@ def main():
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--augment", action="store_true", default=False)
     parser.add_argument("--oversample", action="store_true", default=False)
+    parser.add_argument("--base-model", default="facebook/wav2vec2-base",
+                        dest="base_model", help="HuggingFace 베이스 모델 ID")
     args = parser.parse_args()
 
     samples = scan_dataset(args.data_dir)
@@ -105,9 +107,10 @@ def main():
     if args.oversample:
         train_samples = _oversample_minority(train_samples)
     print(f"Train: {len(train_samples)}, Eval: {len(eval_samples)}")
+    print(f"Base model: {args.base_model}")
 
-    extractor = build_extractor()
-    model = build_model()
+    extractor = build_extractor(args.base_model)
+    model = build_model(args.base_model)
 
     # wav2vec2 feature extractor는 고정 (fine-tuning은 classifier head + top transformer layers)
     model.freeze_feature_encoder()

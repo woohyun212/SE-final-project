@@ -8,9 +8,9 @@ BASE_MODEL = "facebook/wav2vec2-base"
 transformers.logging.set_verbosity_error()
 
 
-def build_model() -> Wav2Vec2ForSequenceClassification:
+def build_model(base_model: str = BASE_MODEL) -> Wav2Vec2ForSequenceClassification:
     return Wav2Vec2ForSequenceClassification.from_pretrained(
-        BASE_MODEL,
+        base_model,
         num_labels=len(EMOTION_LABELS),
         label2id=LABEL2ID,
         id2label=ID2LABEL,
@@ -18,5 +18,5 @@ def build_model() -> Wav2Vec2ForSequenceClassification:
     )
 
 
-def build_extractor() -> Wav2Vec2FeatureExtractor:
-    return Wav2Vec2FeatureExtractor.from_pretrained(BASE_MODEL)
+def build_extractor(base_model: str = BASE_MODEL) -> Wav2Vec2FeatureExtractor:
+    return Wav2Vec2FeatureExtractor.from_pretrained(base_model)
