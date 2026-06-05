@@ -19,7 +19,9 @@ class RecommendationSession(Base):
 class RecommendationResult(Base):
     __tablename__ = "recommendation_results"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    session_id: Mapped[str] = mapped_column(String(36), ForeignKey("recommendation_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("recommendation_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     track_id: Mapped[str] = mapped_column(String(64), ForeignKey("music_catalog.track_id"), nullable=False)
     rank: Mapped[int] = mapped_column(Integer, nullable=False)
     score: Mapped[float] = mapped_column(Float, nullable=False)

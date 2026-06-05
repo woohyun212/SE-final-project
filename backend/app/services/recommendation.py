@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.music_catalog import MusicCatalog
-from app.models.user_preference import UserPreference, _FEATURE_COLS
+from app.models.user_preference import _FEATURE_COLS, UserPreference
 
 _LIKE_WEIGHT = 0.3
 _DISLIKE_WEIGHT = 0.3

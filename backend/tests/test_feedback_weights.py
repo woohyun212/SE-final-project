@@ -19,7 +19,8 @@ from app.database import Base
 from app.models.feedback import Feedback, FeedbackType
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
-from app.models.user_preference import UserPreference, _FEATURE_COLS as PREF_COLS
+from app.models.user_preference import _FEATURE_COLS as PREF_COLS
+from app.models.user_preference import UserPreference
 from app.services.recommendation import recommend_by_emotion
 
 SQLITE_URL = "sqlite:///:memory:"
@@ -100,13 +101,13 @@ def _add_feedback(session, user_id: int, track_id: str, feedback_type: FeedbackT
     track_vec = [getattr(track, f) for f in PREF_COLS]
     if feedback_type == FeedbackType.like:
         new_count = pref.like_count + 1
-        for f, v in zip(PREF_COLS, track_vec):
+        for f, v in zip(PREF_COLS, track_vec, strict=True):
             old = getattr(pref, f"like_{f}")
             setattr(pref, f"like_{f}", old + (v - old) / new_count)
         pref.like_count = new_count
     else:
         new_count = pref.dislike_count + 1
-        for f, v in zip(PREF_COLS, track_vec):
+        for f, v in zip(PREF_COLS, track_vec, strict=True):
             old = getattr(pref, f"dislike_{f}")
             setattr(pref, f"dislike_{f}", old + (v - old) / new_count)
         pref.dislike_count = new_count

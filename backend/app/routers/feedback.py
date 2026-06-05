@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.feedback import Feedback, FeedbackType, PlaybackEvent
 from app.models.music_catalog import MusicCatalog
 from app.models.recommendation import RecommendationSession
-from app.models.user_preference import UserPreference, _FEATURE_COLS
+from app.models.user_preference import _FEATURE_COLS, UserPreference
 from app.routers.auth import get_current_user
 from app.schemas.feedback import LikeDislikeRequest, PlaybackRequest
 
