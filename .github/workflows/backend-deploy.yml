@@ -108,29 +108,15 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: BACKEND_IMAGE,BACKEND_PORT,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN,GEMINI_API_KEY,GEMINI_MODEL
+          envs: BACKEND_IMAGE,BACKEND_PORT,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN
           script_stop: true
           script: |
             cd "$DEPLOY_PATH"
             test -f "$DEPLOY_PATH/docker-compose.prod.yml"
-            if grep -q "^GEMINI_API_KEY=" .env 2>/dev/null; then
-              sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=$GEMINI_API_KEY|" .env
-            else
-              echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> .env
-            fi
-            if [ -n "$GEMINI_MODEL" ]; then
-              if grep -q "^GEMINI_MODEL=" .env 2>/dev/null; then
-                sed -i "s|^GEMINI_MODEL=.*|GEMINI_MODEL=$GEMINI_MODEL|" .env
-              else
-                echo "GEMINI_MODEL=$GEMINI_MODEL" >> .env
-              fi
-            fi
             if [ -n "$GHCR_TOKEN" ]; then
               echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
