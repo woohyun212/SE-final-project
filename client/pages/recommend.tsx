@@ -16,14 +16,18 @@ import { useCallback, useEffect, useState } from 'react';
 import RecommendationVisualizer from '../components/RecommendationVisualizer';
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
+import FeedbackButtons from '../components/FeedbackButtons';
+import AudioPlayer from '../components/AudioPlayer';
 import { recommendApi, ApiError } from '../lib/api';
 import {
   type RecommendResult,
+  type FeedbackType,
   toRecommendResult,
   loadRecommendResult,
   clearRecommendResult,
 } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
+import { usePlaybackLogger } from '../lib/usePlaybackLogger';
 
 const FONT_URL =
   'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap';
@@ -40,6 +44,10 @@ export default function RecommendPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fromVoice, setFromVoice] = useState(false);
+  /** 곡별 피드백 상태 — key: track_id, value: 'like' | 'dislike' (#47). */
+  const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
+  /** 미리듣기 재생 + start/end/complete 이벤트 로깅 (#48). */
+  const { playingId, toggle } = usePlaybackLogger();
 
   // 녹음 화면(/)에서 넘어온 추천 결과가 있으면 마운트 시 로드.
   // 1회성 핸드오프 — 로드 직후 클리어해, 재녹음 없이 /recommend 재진입 시
@@ -142,9 +150,51 @@ export default function RecommendPage() {
           >
             홈
           </Link>
+          <Link
+            href="/history"
+            style={{
+              padding: '10px 18px',
+              borderRadius: 8,
+              background: '#f0f4f8',
+              color: '#1976D2',
+              fontWeight: 500,
+              fontSize: '0.95rem',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            추천 이력
+          </Link>
         </div>
 
-        <RecommendationVisualizer tracks={tracks} loading={loading} error={error} />
+        <RecommendationVisualizer
+          tracks={tracks}
+          loading={loading}
+          error={error}
+          renderRowActions={(t) => (
+            <>
+              <AudioPlayer
+                previewUrl={t.preview_url}
+                playing={playingId === t.track_id}
+                onToggle={() =>
+                  toggle({
+                    trackId: t.track_id ?? '',
+                    previewUrl: t.preview_url ?? null,
+                  })
+                }
+              />
+              <FeedbackButtons
+                trackId={t.track_id ?? ''}
+                recommendationId={result?.sessionId}
+                value={feedback[t.track_id ?? ''] ?? null}
+                onChange={(v) =>
+                  setFeedback((prev) => ({ ...prev, [t.track_id ?? '']: v }))
+                }
+              />
+            </>
+          )}
+        />
 
         {hasResult && result && (
           <>

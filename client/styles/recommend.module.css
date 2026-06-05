@@ -359,3 +359,12 @@
     font-size: 0.875rem;
   }
 }
+
+/* 곡 행 액션 슬롯 (#47 피드백 / #48 재생 버튼 컨테이너) */
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}

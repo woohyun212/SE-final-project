@@ -13,16 +13,22 @@ import styles from '../styles/recommend.module.css';
 /* ── Public types ── */
 
 export interface Track {
+  /** 백엔드 track_id — 피드백/재생 API 연동 키 (#47/#48). 선택(하위호환). */
+  track_id?: string;
   title: string;
   artist: string;
   album: string;
   duration_sec: number;
+  /** 30초 미리듣기 URL — 재생 버튼 활성 조건 (#48). 선택(하위호환). */
+  preview_url?: string | null;
 }
 
 export interface RecommendationVisualizerProps {
   tracks: Track[];
   loading: boolean;
   error?: string | null;
+  /** 곡 행 우측에 액션(피드백 버튼/재생 컨트롤 등)을 주입하는 슬롯 (#47/#48). */
+  renderRowActions?: (track: Track) => React.ReactNode;
 }
 
 /* ── Helpers ── */
@@ -131,7 +137,15 @@ function EmptyState() {
 }
 
 /** Single track row */
-function TrackRow({ track, index }: { track: Track; index: number }) {
+function TrackRow({
+  track,
+  index,
+  renderRowActions,
+}: {
+  track: Track;
+  index: number;
+  renderRowActions?: (track: Track) => React.ReactNode;
+}) {
   return (
     <li
       className={styles.trackItem}
@@ -146,6 +160,9 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       <span className={styles.duration} aria-label={`재생 시간 ${formatDuration(track.duration_sec)}`}>
         {formatDuration(track.duration_sec)}
       </span>
+      {renderRowActions && (
+        <div className={styles.rowActions}>{renderRowActions(track)}</div>
+      )}
     </li>
   );
 }
@@ -156,6 +173,7 @@ export default function RecommendationVisualizer({
   tracks,
   loading,
   error,
+  renderRowActions,
 }: RecommendationVisualizerProps): JSX.Element {
   /* Loading state */
   if (loading) {
@@ -193,6 +211,7 @@ export default function RecommendationVisualizer({
             key={`${track.title}-${track.artist}-${i}`}
             track={track}
             index={i}
+            renderRowActions={renderRowActions}
           />
         ))}
       </ul>

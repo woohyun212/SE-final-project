@@ -1,0 +1,123 @@
+/* ─────────────────────────────────────────────────────────────
+   feedback.module.css — 좋아요/싫어요 피드백 버튼 (#47)
+   팔레트: recommend.module.css 와 동일한 CSS 변수 체계 사용
+   좋아요 = accent-1(#1976D2), 싫어요 = 무채색 강조
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS Variables (light) — recommend.module.css 팔레트 미러 ── */
+.wrapper {
+  --fb-accent: #1976D2;
+  --fb-accent-bg: #dbeafe;
+  --fb-accent-hover: #1565c0;
+  --fb-dislike: #4b5563;
+  --fb-dislike-bg: #e5e7eb;
+  --fb-dislike-hover: #374151;
+  --fb-idle-color: #9ca3af;
+  --fb-idle-bg: transparent;
+  --fb-idle-border: rgba(0, 0, 0, 0.10);
+  --fb-disabled-color: #d1d5db;
+  --fb-ring: rgba(25, 118, 210, 0.35);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  .wrapper {
+    --fb-accent: #58a6ff;
+    --fb-accent-bg: #1e2d3d;
+    --fb-accent-hover: #79b8ff;
+    --fb-dislike: #d1d5db;
+    --fb-dislike-bg: #30363d;
+    --fb-dislike-hover: #f0f6fc;
+    --fb-idle-color: #484f58;
+    --fb-idle-bg: transparent;
+    --fb-idle-border: rgba(255, 255, 255, 0.10);
+    --fb-disabled-color: #30363d;
+    --fb-ring: rgba(88, 166, 255, 0.30);
+  }
+}
+
+/* ── Base button ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--fb-idle-border);
+  background: var(--fb-idle-bg);
+  color: var(--fb-idle-color);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  /* reset browser defaults */
+  padding: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--fb-ring);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: transparent;
+  transform: scale(1.08);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.btn:disabled {
+  color: var(--fb-disabled-color);
+  border-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ── 좋아요 활성 상태 (accent blue) ── */
+.likeActive {
+  color: var(--fb-accent);
+  background: var(--fb-accent-bg);
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--fb-accent);
+}
+
+.likeActive:hover:not(:disabled) {
+  color: var(--fb-accent-hover);
+  background: var(--fb-accent-bg);
+}
+
+/* ── 싫어요 활성 상태 (무채색 강조) ── */
+.dislikeActive {
+  color: var(--fb-dislike);
+  background: var(--fb-dislike-bg);
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--fb-dislike);
+}
+
+.dislikeActive:hover:not(:disabled) {
+  color: var(--fb-dislike-hover);
+  background: var(--fb-dislike-bg);
+}
+
+/* ── Pop animation on activation ── */
+.likeActive,
+.dislikeActive {
+  animation: fb-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fb-pop {
+  0%   { transform: scale(1);    }
+  45%  { transform: scale(1.22); }
+  100% { transform: scale(1);    }
+}
