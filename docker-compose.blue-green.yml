@@ -34,6 +34,3 @@ services:
       retries: 3
       start_period: 30s
 
-volumes:
-  postgres_prod_data:
-    external: true
