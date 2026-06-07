@@ -9,7 +9,8 @@ import { useRouter } from 'next/router';
 import { useCallback } from 'react';
 
 import VoiceCapture from '../components/VoiceCapture';
-import { logout } from '../lib/auth';
+import { logout, getRefreshToken } from '../lib/auth';
+import { logoutApi } from '../lib/api';
 import { saveRecommendResult, type RecommendResult } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
@@ -24,7 +25,18 @@ export default function Home() {
   // 로그인 필요 — 미인증/토큰 만료 시 /login 으로 리다이렉트.
   useAuthGuard();
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    // 서버측 revoke 를 먼저 완료시킨 뒤 토큰을 지운다. authedFetch 는 내부에서
+    // 동적 import 후 access token 을 비동기로 읽으므로(api.ts), await 없이 클리어하면
+    // Authorization 헤더가 빠져 /auth/logout 이 항상 401 이 된다 (PR #168 리뷰).
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await logoutApi(refreshToken);
+      } catch {
+        // 서버 revoke 실패해도 로컬 로그아웃 진행.
+      }
+    }
     logout();
     void router.push('/login');
   }, [router]);

@@ -1,9 +1,9 @@
 /**
  * toRecommendResult 어댑터 단위 테스트 (#114).
  *
- * 백엔드 /recommend 응답(raw, snake_case·중첩)을 도메인 RecommendResult 로
- * 변환하는 단일 경계를 검증. 백엔드 최종 schema(track_features / session_id)
- * 변경에 대응하는 매핑 + 옛 shape fallback + 빈 입력을 커버한다.
+ * 백엔드 /recommend 확정 응답(snake_case·중첩)을 도메인 RecommendResult 로
+ * 변환하는 단일 경계를 검증. 확정 shape(recommendations / track_features /
+ * session_id / context / fallback_flags) 매핑 + 선택 필드 기본값 + 빈 입력을 커버한다.
  */
 import { toRecommendResult } from "../lib/recommend";
 
@@ -73,22 +73,108 @@ describe("toRecommendResult", () => {
     expect(toRecommendResult(raw).transcript).toBeNull();
   });
 
-  it("옛 shape({ tracks })는 fallback 으로 중립값/null 매핑한다", () => {
+  it("context 필드가 있으면 ContextResult 로 매핑한다", () => {
     const raw = {
-      tracks: [
-        { title: "Old", artist: "A", album: "B", duration_sec: 200 },
+      session_id: "sess-3",
+      recommendations: [
+        {
+          track: {
+            track_id: "t-3",
+            title: "Morning",
+            artist: "A",
+            album: "B",
+            duration_sec: 180,
+          },
+          score: 0.8,
+          track_features: { valence: 0.6, energy: 0.5 },
+        },
       ],
+      user_emotion: { valence: 0.5, energy: 0.5 },
+      context: {
+        time_of_day: "morning",
+        location: "home",
+        activity: "studying",
+        emotions: { happy: 0.6, calm: 0.3 },
+      },
     };
 
     const result = toRecommendResult(raw);
-    expect(result.tracks).toHaveLength(1);
-    const t = result.tracks[0];
-    expect(t.title).toBe("Old");
-    expect(t.track_id).toBe("legacy-0"); // track_id 미제공 → 합성
-    expect(t.valence).toBe(0.5);
-    expect(t.energy).toBe(0.5);
-    expect(t.reason).toBeNull();
-    expect(result.userEmotion).toEqual({ valence: 0.5, energy: 0.5 });
+    expect(result.context).toEqual({
+      time_of_day: "morning",
+      location: "home",
+      activity: "studying",
+      emotions: { happy: 0.6, calm: 0.3 },
+    });
+  });
+
+  it("context 필드 없으면 null 을 반환한다", () => {
+    const raw = {
+      session_id: "sess-4",
+      recommendations: [
+        {
+          track: {
+            track_id: "t-4",
+            title: "Evening",
+            artist: "B",
+            album: "C",
+            duration_sec: 200,
+          },
+          score: 0.75,
+          track_features: { valence: 0.4, energy: 0.3 },
+        },
+      ],
+      user_emotion: { valence: 0.4, energy: 0.3 },
+    };
+
+    const result = toRecommendResult(raw);
+    expect(result.context).toBeNull();
+  });
+
+  it("fallback_flags 가 있으면 FallbackFlags 로 매핑한다", () => {
+    const raw = {
+      session_id: "sess-5",
+      recommendations: [
+        {
+          track: {
+            track_id: "t-5",
+            title: "Fallback",
+            artist: "C",
+            album: "D",
+            duration_sec: 190,
+          },
+          score: 0.5,
+          track_features: { valence: 0.5, energy: 0.5 },
+        },
+      ],
+      user_emotion: { valence: 0.5, energy: 0.5 },
+      fallback_flags: { ml: true, context: false, reason: true },
+    };
+
+    const result = toRecommendResult(raw);
+    expect(result.fallbackFlags).toEqual({ ml: true, context: false, reason: true });
+  });
+
+  it("fallback_flags 없으면 undefined 를 반환한다", () => {
+    const raw = {
+      session_id: "sess-6",
+      recommendations: [
+        {
+          track: {
+            track_id: "t-6",
+            title: "Normal",
+            artist: "D",
+            album: "E",
+            duration_sec: 210,
+          },
+          score: 0.9,
+          track_features: { valence: 0.7, energy: 0.6 },
+        },
+      ],
+      user_emotion: { valence: 0.7, energy: 0.6 },
+    };
+
+    const result = toRecommendResult(raw);
+    expect(result.fallbackFlags).toBeUndefined();
   });
 
   it("알 수 없는/빈 입력은 빈 결과를 반환한다", () => {
