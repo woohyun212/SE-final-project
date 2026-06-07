@@ -148,7 +148,7 @@ async def recommend(
         ))
     db.commit()
 
-    logger.info("recommend stage=total elapsed_ms=%.1f session_id=%d", (time.perf_counter() - pipeline_start) * 1000, session.id)
+    logger.info("recommend stage=total elapsed_ms=%.1f session_id=%s", (time.perf_counter() - pipeline_start) * 1000, session.id)
 
     return RecommendResponse(
         session_id=session.id,
