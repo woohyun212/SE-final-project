@@ -19,7 +19,7 @@ from app.schemas.recommend import (
 )
 from app.services.context_analyzer import ContextAnalyzer, get_context_analyzer
 from app.services.emotion_fusion import fuse
-from app.services.ml_client import MLClient, get_ml_client, vad_from_text
+from app.services.ml_client import MLClient, VADResult, get_ml_client, vad_from_text
 from app.services.reason_generator import ReasonGenerator, get_reason_generator
 from app.services.recommendation import recommend_by_emotion
 from app.services.stt import STTProvider, get_stt_provider
@@ -70,11 +70,18 @@ async def recommend(
         if not audio_bytes:
             return None
         start = time.perf_counter()
-        text = await stt.transcribe(audio_bytes, audio.filename or "audio.wav")
+        try:
+            text = await stt.transcribe(audio_bytes, audio.filename or "audio.wav")
+        except Exception as exc:
+            logger.warning(
+                "recommend stage=stt elapsed_ms=%.1f failed — context analysis will be skipped: %s",
+                (time.perf_counter() - start) * 1000, exc,
+            )
+            return None
         logger.info("recommend stage=stt elapsed_ms=%.1f transcript_len=%d", (time.perf_counter() - start) * 1000, len(text))
         return text
 
-    async def _predict():
+    async def _predict() -> VADResult | None:
         start = time.perf_counter()
         try:
             result = await ml.predict(audio_bytes or b"")
@@ -132,6 +139,7 @@ async def recommend(
         )
 
     # RecommendationSession + 추천 결과 곡 DB 저장
+    start = time.perf_counter()
     session = RecommendationSession(
         user_id=current_user.id,
         user_valence=emotion_vector["valence"],
@@ -147,6 +155,7 @@ async def recommend(
             score=round(score, 4),
         ))
     db.commit()
+    logger.info("recommend stage=db_save elapsed_ms=%.1f", (time.perf_counter() - start) * 1000)
 
     logger.info("recommend stage=total elapsed_ms=%.1f session_id=%s", (time.perf_counter() - pipeline_start) * 1000, session.id)
 
