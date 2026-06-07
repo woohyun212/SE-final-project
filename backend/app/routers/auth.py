@@ -10,8 +10,11 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.feedback import Feedback, PlaybackEvent
+from app.models.recommendation import RecommendationResult, RecommendationSession
 from app.models.token import RefreshToken
 from app.models.user import User
+from app.models.user_preference import UserPreference
 from app.schemas.auth import (
     AccessTokenResponse,
     LoginRequest,
@@ -162,3 +165,31 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> AccessTokenR
     db.commit()
 
     return AccessTokenResponse(access_token=_create_access_token(user.id))
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """FR1.4 계정 탈퇴 — 본인 계정과 모든 개인 데이터를 영구 삭제한다 (소프트삭제 아님).
+
+    refresh token 은 전부 제거되고, access token 도 사용자 조회 실패(401)로 즉시 무효화된다.
+    """
+    user_id = current_user.id
+
+    # FK 의존 역순으로 명시 삭제 — DB CASCADE 가 일부 테이블에만 걸려 있어 ORM 레벨에서 일괄 처리
+    session_ids = [
+        sid for (sid,) in db.query(RecommendationSession.id).filter(RecommendationSession.user_id == user_id)
+    ]
+    db.query(Feedback).filter(Feedback.user_id == user_id).delete()
+    db.query(PlaybackEvent).filter(PlaybackEvent.user_id == user_id).delete()
+    if session_ids:
+        db.query(RecommendationResult).filter(
+            RecommendationResult.session_id.in_(session_ids)
+        ).delete(synchronize_session=False)
+    db.query(RecommendationSession).filter(RecommendationSession.user_id == user_id).delete()
+    db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
+    db.query(UserPreference).filter(UserPreference.user_id == user_id).delete()
+    db.query(User).filter(User.id == user_id).delete()
+    db.commit()
