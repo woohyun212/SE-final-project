@@ -193,6 +193,12 @@ def test_stt_no_fallback_when_transcribe_succeeds():
     assert res.json()["fallback_flags"]["stt"] is False
 
 
+def test_stt_no_fallback_when_audio_empty():
+    with _make_client() as c:
+        res = c.post("/recommend", files={"audio": ("t.wav", io.BytesIO(b""), "audio/wav")})
+    assert res.json()["fallback_flags"]["stt"] is False
+
+
 # ── _rule_based_context 단위 테스트 ──────────────────────────────────────────
 
 def test_rule_based_context_detects_time():
