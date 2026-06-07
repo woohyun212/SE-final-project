@@ -76,10 +76,20 @@ describe("VoiceCapture", () => {
 
   it("recorded: 유효 녹음이면 자동 업로드 후 추천 곡 수를 표시", async () => {
     mockRecommendApi.mockResolvedValue({
-      tracks: [
-        { title: "a", artist: "x", album: "z", duration_sec: 100 },
-        { title: "b", artist: "y", album: "w", duration_sec: 120 },
+      session_id: "sess-test",
+      recommendations: [
+        {
+          track: { track_id: "t-1", title: "a", artist: "x", album: "z", duration_sec: 100 },
+          score: 0.9,
+          track_features: { valence: 0.6, energy: 0.5 },
+        },
+        {
+          track: { track_id: "t-2", title: "b", artist: "y", album: "w", duration_sec: 120 },
+          score: 0.8,
+          track_features: { valence: 0.4, energy: 0.6 },
+        },
       ],
+      user_emotion: { valence: 0.5, energy: 0.5 },
     });
     mockUseRecorder.mockReturnValue(
       makeRecorder({ status: "recorded", audioBlob: new Blob(["x"]) })

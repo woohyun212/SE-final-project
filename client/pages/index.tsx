@@ -9,7 +9,8 @@ import { useRouter } from 'next/router';
 import { useCallback } from 'react';
 
 import VoiceCapture from '../components/VoiceCapture';
-import { logout } from '../lib/auth';
+import { logout, getRefreshToken } from '../lib/auth';
+import { logoutApi } from '../lib/api';
 import { saveRecommendResult, type RecommendResult } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 
@@ -25,6 +26,13 @@ export default function Home() {
   useAuthGuard();
 
   const handleLogout = useCallback(() => {
+    // 토큰 클리어 전에 API 호출 시작 — authedFetch 가 access token 을 읽기 때문.
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      void logoutApi(refreshToken).catch(() => {
+        // 서버 revoke 실패해도 로컬 로그아웃 진행.
+      });
+    }
     logout();
     void router.push('/login');
   }, [router]);
