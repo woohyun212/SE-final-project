@@ -78,7 +78,10 @@ async def recommend(
                 (time.perf_counter() - start) * 1000, exc,
             )
             return None, True
-        logger.info("recommend stage=stt elapsed_ms=%.1f transcript_len=%d", (time.perf_counter() - start) * 1000, len(text))
+        logger.info(
+            "recommend stage=stt elapsed_ms=%.1f transcript_len=%d",
+            (time.perf_counter() - start) * 1000, len(text),
+        )
         return text, False
 
     async def _predict() -> VADResult | None:
@@ -157,7 +160,10 @@ async def recommend(
     db.commit()
     logger.info("recommend stage=db_save elapsed_ms=%.1f", (time.perf_counter() - start) * 1000)
 
-    logger.info("recommend stage=total elapsed_ms=%.1f session_id=%s", (time.perf_counter() - pipeline_start) * 1000, session.id)
+    logger.info(
+        "recommend stage=total elapsed_ms=%.1f session_id=%s",
+        (time.perf_counter() - pipeline_start) * 1000, session.id,
+    )
 
     return RecommendResponse(
         session_id=session.id,
@@ -171,5 +177,7 @@ async def recommend(
         ),
         transcript=transcript,
         context=context,
-        fallback_flags=FallbackFlags(stt=stt_fallback, ml=ml_fallback, context=context_fallback, reason=reason_fallback),
+        fallback_flags=FallbackFlags(
+            stt=stt_fallback, ml=ml_fallback, context=context_fallback, reason=reason_fallback,
+        ),
     )
