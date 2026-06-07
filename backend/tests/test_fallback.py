@@ -152,6 +152,53 @@ def test_ml_fallback_no_transcript_gives_neutral_emotion():
     assert ue["valence"] == pytest.approx(0.5, abs=0.01)
 
 
+# ── STT 장애 내성 통합 테스트 (PR #169 리뷰 Medium #1) ───────────────────────
+# STT 예외를 흡수해 transcript=None으로 응답하고 (요청 전체 500이 아님),
+# context 분석은 transcript 부재로 자연스럽게 스킵된다.
+
+def test_stt_failure_returns_200_with_null_transcript():
+    failing_stt = MagicMock()
+    failing_stt.transcribe = AsyncMock(side_effect=Exception("whisper crashed"))
+    with _make_client(stt=failing_stt) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.status_code == 200
+    assert res.json()["transcript"] is None
+
+
+def test_stt_failure_skips_context_analysis():
+    analyzer = MagicMock(spec=ContextAnalyzer)
+    analyzer.analyze = AsyncMock(return_value=(ContextResult(), False))
+    failing_stt = MagicMock()
+    failing_stt.transcribe = AsyncMock(side_effect=Exception("whisper crashed"))
+    with _make_client(stt=failing_stt, analyzer=analyzer) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.status_code == 200
+    analyzer.analyze.assert_not_called()
+    assert res.json()["context"] is None
+
+
+def test_stt_fallback_flag_set_when_transcribe_fails():
+    failing_stt = MagicMock()
+    failing_stt.transcribe = AsyncMock(side_effect=Exception("whisper crashed"))
+    with _make_client(stt=failing_stt) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.json()["fallback_flags"]["stt"] is True
+
+
+def test_stt_no_fallback_when_transcribe_succeeds():
+    stt = MagicMock()
+    stt.transcribe = AsyncMock(return_value="오늘 너무 행복해")
+    with _make_client(stt=stt) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.json()["fallback_flags"]["stt"] is False
+
+
+def test_stt_no_fallback_when_audio_empty():
+    with _make_client() as c:
+        res = c.post("/recommend", files={"audio": ("t.wav", io.BytesIO(b""), "audio/wav")})
+    assert res.json()["fallback_flags"]["stt"] is False
+
+
 # ── _rule_based_context 단위 테스트 ──────────────────────────────────────────
 
 def test_rule_based_context_detects_time():
