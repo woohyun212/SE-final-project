@@ -258,6 +258,18 @@ export async function playbackApi(
 }
 
 /**
+ * 서버측 refresh token revoke — `POST /auth/logout` (FR1.x).
+ * 204 No Content 응답이므로 JSON 파싱 없음.
+ * @param refreshToken 현재 보관 중인 refresh token
+ */
+export async function logoutApi(refreshToken: string): Promise<void> {
+  await authedFetch("/auth/logout", {
+    method: "POST",
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+}
+
+/**
  * 추천 이력 조회 — `GET /history?n=` (#50, FR6.5).
  * @param n 최근 N개 (생략 시 백엔드 기본값).
  */

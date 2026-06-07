@@ -2,8 +2,11 @@
  * recommend.tsx — 추천 결과 화면 (#20 리스트 + #45 차트 + #46 이유).
  *
  * 녹음 화면(/)에서 sessionStorage 로 넘어온 추천 결과(RecommendResult)를 로드해
- * 리스트·2D 감정차트·추천 이유를 모두 실데이터로 렌더한다. 직접 진입(저장값 없음)
- * 시에는 수동 "추천 받기" 버튼으로 placeholder 오디오를 보내 라운드트립을 확인한다.
+ * 리스트·2D 감정차트·추천 이유를 모두 실데이터로 렌더한다.
+ *
+ * 직접 진입(저장값 없음) 시에는 빈 상태 안내 + "녹음하러 가기" CTA 만 표시한다.
+ * RecommendationVisualizer 의 빈 상태와 중복되지 않도록, 결과가 없으면
+ * Visualizer 자체를 렌더하지 않는다.
  *
  * 백엔드 /recommend 응답(snake_case·중첩)은 toRecommendResult 어댑터(#114)가
  * 도메인 RecommendResult 로 변환한다.
@@ -11,18 +14,16 @@
 
 import Head from 'next/head';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import RecommendationVisualizer from '../components/RecommendationVisualizer';
 import EmotionMusicChart from '../components/EmotionMusicChart';
 import { RecommendationReasonList } from '../components/RecommendationReasonCard';
 import FeedbackButtons from '../components/FeedbackButtons';
 import AudioPlayer from '../components/AudioPlayer';
-import { recommendApi, ApiError } from '../lib/api';
 import {
   type RecommendResult,
   type FeedbackType,
-  toRecommendResult,
   loadRecommendResult,
   clearRecommendResult,
 } from '../lib/recommend';
@@ -32,18 +33,180 @@ import { usePlaybackLogger } from '../lib/usePlaybackLogger';
 const FONT_URL =
   'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap';
 
-/** 직접 진입 시 수동 트리거용 더미 오디오 Blob (placeholder). */
-function createPlaceholderAudio(): Blob {
-  return new Blob([new Uint8Array(16)], { type: 'audio/wav' });
+// ── 한국어 매핑 테이블 ─────────────────────────────────────────────────────────
+
+/** time_of_day → 한국어 */
+const TIME_OF_DAY_KO: Record<string, string> = {
+  morning: '아침',
+  afternoon: '오후',
+  evening: '저녁',
+  night: '밤',
+};
+
+/** location → 한국어 */
+const LOCATION_KO: Record<string, string> = {
+  home: '집',
+  commute: '이동 중',
+  gym: '헬스장',
+  office: '사무실',
+  outdoor: '야외',
+  cafe: '카페',
+};
+
+/** activity → 한국어 */
+const ACTIVITY_KO: Record<string, string> = {
+  working: '일하는 중',
+  exercising: '운동 중',
+  relaxing: '쉬는 중',
+  studying: '공부 중',
+  commuting: '출퇴근 중',
+  socializing: '사람들과 함께',
+};
+
+/** 감정 영문 키 → 한국어 레이블 — backend `_EMOTION_LABELS` 7종과 1:1 (schemas/context.py). */
+const EMOTION_KO: Record<string, string> = {
+  happy: '행복',
+  sad: '슬픔',
+  angry: '화남',
+  anxious: '불안',
+  calm: '차분',
+  energetic: '활기',
+  melancholic: '우울',
+};
+
+// ── 상황 칩 컴포넌트 ──────────────────────────────────────────────────────────
+
+interface ChipProps {
+  label: string;
 }
+
+/** 컨텍스트 라벨 칩 — 인라인 스타일(기존 페이지 패턴 유지). */
+function Chip({ label }: ChipProps) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        padding: '4px 10px',
+        borderRadius: 20,
+        fontSize: '0.8125rem',
+        fontWeight: 500,
+        background: '#dbeafe',
+        color: '#1e40af',
+        letterSpacing: '-0.01em',
+        lineHeight: 1.4,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** 다크모드용 chip 배경 · 텍스트는 CSS media query 를 인라인에서 적용할 수 없으므로
+ *  recommend.module.css 의 CSS 변수에 의존하지 않고 별도 className 을 쓰지 않는다.
+ *  대신 Chip 과 EmotionChip 은 동일 팔레트(파란 계열)를 유지한다.
+ */
+
+interface EmotionChipProps {
+  label: string;
+  pct: number;
+}
+
+/** 감정 확률 칩 — "행복 42%" 형식. */
+function EmotionChip({ label, pct }: EmotionChipProps) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        padding: '4px 10px',
+        borderRadius: 20,
+        fontSize: '0.8125rem',
+        fontWeight: 500,
+        background: '#ede9fe',
+        color: '#4c1d95',
+        letterSpacing: '-0.01em',
+        lineHeight: 1.4,
+      }}
+    >
+      {label} {pct}%
+    </span>
+  );
+}
+
+// ── 직접 진입 빈 상태 ─────────────────────────────────────────────────────────
+
+/** 저장된 결과 없이 직접 진입했을 때 표시하는 안내 + CTA. */
+function NoResultGuide() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 16,
+        padding: '64px 24px',
+        textAlign: 'center',
+      }}
+    >
+      {/* 마이크 아이콘 */}
+      <span aria-hidden="true" style={{ color: '#c7d8ee' }}>
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4Zm-5 8a6 6 0 0 0 12 0h-2a4 4 0 0 1-8 0H6Zm6 6a7.003 7.003 0 0 1-6.929-6H3.07A9.004 9.004 0 0 0 11 19.945V22h2v-2.055A9.004 9.004 0 0 0 20.929 12H18.93A7.003 7.003 0 0 1 12 18Z" />
+        </svg>
+      </span>
+      <p
+        style={{
+          fontSize: '0.9375rem',
+          fontWeight: 600,
+          color: '#6b7280',
+          margin: 0,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        아직 추천 결과가 없어요.
+      </p>
+      <p
+        style={{
+          fontSize: '0.8125rem',
+          color: '#6b7280',
+          margin: 0,
+          opacity: 0.7,
+        }}
+      >
+        녹음 화면에서 음성을 녹음하면 감정 분석 후 곡을 추천해 드려요.
+      </p>
+      <Link
+        href="/"
+        style={{
+          marginTop: 8,
+          padding: '11px 24px',
+          borderRadius: 10,
+          background: '#1976D2',
+          color: '#fff',
+          fontWeight: 600,
+          fontSize: '0.9375rem',
+          textDecoration: 'none',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {/* 마이크 아이콘(소) */}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4Zm-5 8a6 6 0 0 0 12 0h-2a4 4 0 0 1-8 0H6Zm6 6a7.003 7.003 0 0 1-6.929-6H3.07A9.004 9.004 0 0 0 11 19.945V22h2v-2.055A9.004 9.004 0 0 0 20.929 12H18.93A7.003 7.003 0 0 1 12 18Z" />
+        </svg>
+        녹음하러 가기
+      </Link>
+    </div>
+  );
+}
+
+// ── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function RecommendPage() {
   useAuthGuard();
 
   const [result, setResult] = useState<RecommendResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fromVoice, setFromVoice] = useState(false);
   /** 곡별 피드백 상태 — key: track_id, value: 'like' | 'dislike' (#47). */
   const [feedback, setFeedback] = useState<Record<string, FeedbackType>>({});
   /** 미리듣기 재생 + start/end/complete 이벤트 로깅 (#48). */
@@ -56,37 +219,35 @@ export default function RecommendPage() {
     const stored = loadRecommendResult();
     if (stored && stored.tracks.length > 0) {
       setResult(stored);
-      setFromVoice(true);
       clearRecommendResult();
-    }
-  }, []);
-
-  const handleFetch = useCallback(async () => {
-    setFromVoice(false); // 수동 재요청 — 출처를 '음성'에서 전환
-    setLoading(true);
-    setError(null);
-    try {
-      const raw = await recommendApi(createPlaceholderAudio());
-      setResult(toRecommendResult(raw));
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setError(
-          err.status === 401
-            ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
-            : `오류가 발생했습니다. (${err.status}) ${err.detail}`,
-        );
-      } else if (err instanceof TypeError) {
-        setError('서버 연결 실패. 잠시 후 다시 시도해 주세요.');
-      } else {
-        setError('알 수 없는 오류가 발생했습니다.');
-      }
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const tracks = result?.tracks ?? [];
   const hasResult = tracks.length > 0;
+
+  // ── context 칩 목록 계산 ────────────────────────────────────────────────────
+  const contextChips: string[] = [];
+  if (result?.context) {
+    const { time_of_day, location, activity } = result.context;
+    if (time_of_day) contextChips.push(TIME_OF_DAY_KO[time_of_day] ?? time_of_day);
+    if (location) contextChips.push(LOCATION_KO[location] ?? location);
+    if (activity) contextChips.push(ACTIVITY_KO[activity] ?? activity);
+  }
+
+  // ── context emotions 칩 목록 ────────────────────────────────────────────────
+  const emotionChips: Array<{ label: string; pct: number }> = [];
+  if (result?.context?.emotions) {
+    for (const [key, val] of Object.entries(result.context.emotions)) {
+      emotionChips.push({
+        label: EMOTION_KO[key] ?? key,
+        pct: Math.round(val * 100),
+      });
+    }
+  }
+
+  // ── fallback 이유 경고 여부 ─────────────────────────────────────────────────
+  const showFallbackReasonNote = result?.fallbackFlags?.reason === true;
 
   return (
     <>
@@ -106,34 +267,18 @@ export default function RecommendPage() {
           padding: '48px 24px 96px',
         }}
       >
+        {/* ── 헤더 ── */}
         <header style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: '1.75rem', margin: 0, color: '#0f172a' }}>추천 곡</h1>
           <p style={{ margin: '8px 0 0', color: '#6b7280', fontSize: '0.95rem' }}>
-            {fromVoice
+            {hasResult
               ? '방금 녹음한 음성의 감정 분석 결과로 추천된 곡이에요.'
               : '감정 분석 기반 추천 트랙 리스트'}
           </p>
         </header>
 
+        {/* ── 네비게이션 링크 ── */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-          <button
-            type="button"
-            onClick={handleFetch}
-            disabled={loading}
-            aria-busy={loading}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 8,
-              border: 0,
-              background: loading ? '#93c5fd' : '#1976D2',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: loading ? 'progress' : 'pointer',
-            }}
-          >
-            {loading ? '불러오는 중…' : fromVoice ? '다시 추천 받기' : '추천 받기'}
-          </button>
           <Link
             href="/"
             style={{
@@ -168,36 +313,105 @@ export default function RecommendPage() {
           </Link>
         </div>
 
-        <RecommendationVisualizer
-          tracks={tracks}
-          loading={loading}
-          error={error}
-          renderRowActions={(t) => (
-            <>
-              <AudioPlayer
-                previewUrl={t.preview_url}
-                playing={playingId === t.track_id}
-                onToggle={() =>
-                  toggle({
-                    trackId: t.track_id ?? '',
-                    previewUrl: t.preview_url ?? null,
-                  })
-                }
-              />
-              <FeedbackButtons
-                trackId={t.track_id ?? ''}
-                recommendationId={result?.sessionId}
-                value={feedback[t.track_id ?? ''] ?? null}
-                onChange={(v) =>
-                  setFeedback((prev) => ({ ...prev, [t.track_id ?? '']: v }))
-                }
-              />
-            </>
-          )}
-        />
-
-        {hasResult && result && (
+        {/* ── 직접 진입(결과 없음) → 안내만 표시, Visualizer 렌더 안 함 ── */}
+        {!hasResult ? (
+          <NoResultGuide />
+        ) : (
           <>
+            {/* ── transcript 인용 블록 ── */}
+            {result?.transcript && (
+              <blockquote
+                style={{
+                  margin: '0 0 28px',
+                  padding: '14px 18px',
+                  borderLeft: '3px solid #1976D2',
+                  background: '#f0f7ff',
+                  borderRadius: '0 10px 10px 0',
+                  color: '#374151',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.6,
+                  fontStyle: 'italic',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    fontStyle: 'normal',
+                    color: '#1976D2',
+                    marginBottom: 6,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  내 이야기
+                </span>
+                {result.transcript}
+              </blockquote>
+            )}
+
+            {/* ── context 칩 섹션 ── */}
+            {(contextChips.length > 0 || emotionChips.length > 0) && (
+              <div style={{ marginBottom: 28 }}>
+                {contextChips.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 6,
+                      marginBottom: emotionChips.length > 0 ? 8 : 0,
+                    }}
+                    aria-label="녹음 시점 상황"
+                  >
+                    {contextChips.map((label) => (
+                      <Chip key={label} label={label} />
+                    ))}
+                  </div>
+                )}
+                {emotionChips.length > 0 && (
+                  <div
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                    aria-label="감지된 감정"
+                  >
+                    {emotionChips.map(({ label, pct }) => (
+                      <EmotionChip key={label} label={label} pct={pct} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── 추천 곡 리스트 ── */}
+            <RecommendationVisualizer
+              tracks={tracks}
+              loading={false}
+              error={null}
+              renderRowActions={(t) => (
+                <>
+                  <AudioPlayer
+                    previewUrl={t.preview_url}
+                    playing={playingId === t.track_id}
+                    onToggle={() =>
+                      toggle({
+                        trackId: t.track_id ?? '',
+                        previewUrl: t.preview_url ?? null,
+                      })
+                    }
+                  />
+                  <FeedbackButtons
+                    trackId={t.track_id ?? ''}
+                    recommendationId={result?.sessionId}
+                    value={feedback[t.track_id ?? ''] ?? null}
+                    onChange={(v) =>
+                      setFeedback((prev) => ({ ...prev, [t.track_id ?? '']: v }))
+                    }
+                  />
+                </>
+              )}
+            />
+
+            {/* ── 감정-음악 매핑 차트 ── */}
             <section style={{ marginTop: 40 }}>
               <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
                 감정-음악 매핑
@@ -205,17 +419,33 @@ export default function RecommendPage() {
               <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
                 내 감정과 추천 곡의 valence×energy 관계
               </p>
-              <EmotionMusicChart tracks={result.tracks} userEmotion={result.userEmotion} />
+              <EmotionMusicChart tracks={result!.tracks} userEmotion={result!.userEmotion} />
             </section>
 
+            {/* ── 추천 이유 섹션 ── */}
             <section style={{ marginTop: 40 }}>
-              <h2 style={{ fontSize: '1.25rem', margin: '0 0 12px', color: '#0f172a' }}>
-                추천 이유
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
+                <h2 style={{ fontSize: '1.25rem', margin: 0, color: '#0f172a' }}>
+                  추천 이유
+                </h2>
+                {/* fallback reason 안내 — fallbackFlags.reason === true 일 때만 표시 */}
+                {showFallbackReasonNote && (
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#9ca3af',
+                      fontStyle: 'italic',
+                    }}
+                    aria-label="추천 이유 생성 방식 안내"
+                  >
+                    (이유는 기본 규칙으로 생성됨)
+                  </span>
+                )}
+              </div>
               <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
                 각 곡을 추천한 이유
               </p>
-              <RecommendationReasonList tracks={result.tracks} />
+              <RecommendationReasonList tracks={result!.tracks} />
             </section>
           </>
         )}
