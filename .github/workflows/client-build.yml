@@ -1,0 +1,51 @@
+name: client-build
+
+# NFR6.1 — Windows/macOS/Linux 3-OS 데스크톱 앱 빌드 산출물 생성.
+# 수동 트리거 또는 client-v* 태그 push 시 3-OS 매트릭스로 electron-builder 패키징 후
+# 산출물(dmg/zip/nsis/AppImage/deb)을 아티팩트로 업로드한다.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "client-v*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test -- --ci
+
+      - name: Build desktop app
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-${{ matrix.os }}
+          path: |
+            client/release/*.dmg
+            client/release/*.zip
+            client/release/*.exe
+            client/release/*.AppImage
+            client/release/*.deb
+          if-no-files-found: ignore
