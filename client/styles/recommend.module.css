@@ -138,6 +138,17 @@
   color: var(--art-icon);
 }
 
+/* 보강된 앨범아트 이미지 — placeholder 와 동일 박스(64×64, 둥근 모서리). */
+.artImage {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  background: linear-gradient(135deg, var(--art-bg-a) 0%, var(--art-bg-b) 100%);
+}
+
 /* ── Track text block ── */
 .trackInfo {
   flex: 1;
@@ -349,6 +360,7 @@
   }
 
   .artPlaceholder,
+  .artImage,
   .skeletonArt {
     width: 52px;
     height: 52px;
