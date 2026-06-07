@@ -25,6 +25,7 @@ class RecommendationItem(BaseModel):
 
 
 class FallbackFlags(BaseModel):
+    stt: bool = False
     ml: bool = False
     context: bool = False
     reason: bool = False

@@ -66,9 +66,9 @@ async def recommend(
 
     # STT와 ML predict는 둘 다 audio_bytes만 입력받는 독립 호출 — gather로 병렬 실행해
     # 두 단계 중 더 느린 쪽의 시간만 소요되도록 한다 (기존엔 순차 실행으로 합산되었음).
-    async def _transcribe() -> str | None:
+    async def _transcribe() -> tuple[str | None, bool]:
         if not audio_bytes:
-            return None
+            return None, False
         start = time.perf_counter()
         try:
             text = await stt.transcribe(audio_bytes, audio.filename or "audio.wav")
@@ -77,9 +77,9 @@ async def recommend(
                 "recommend stage=stt elapsed_ms=%.1f failed — context analysis will be skipped: %s",
                 (time.perf_counter() - start) * 1000, exc,
             )
-            return None
+            return None, True
         logger.info("recommend stage=stt elapsed_ms=%.1f transcript_len=%d", (time.perf_counter() - start) * 1000, len(text))
-        return text
+        return text, False
 
     async def _predict() -> VADResult | None:
         start = time.perf_counter()
@@ -94,7 +94,7 @@ async def recommend(
         logger.info("recommend stage=ml elapsed_ms=%.1f", (time.perf_counter() - start) * 1000)
         return result
 
-    transcript, ml_result = await asyncio.gather(_transcribe(), _predict())
+    (transcript, stt_fallback), ml_result = await asyncio.gather(_transcribe(), _predict())
 
     ml_fallback = ml_result is None
     vad = ml_result if ml_result is not None else vad_from_text(transcript or "")
@@ -171,5 +171,5 @@ async def recommend(
         ),
         transcript=transcript,
         context=context,
-        fallback_flags=FallbackFlags(ml=ml_fallback, context=context_fallback, reason=reason_fallback),
+        fallback_flags=FallbackFlags(stt=stt_fallback, ml=ml_fallback, context=context_fallback, reason=reason_fallback),
     )

@@ -177,6 +177,28 @@ def test_stt_failure_skips_context_analysis():
     assert res.json()["context"] is None
 
 
+def test_stt_fallback_flag_set_when_transcribe_fails():
+    failing_stt = MagicMock()
+    failing_stt.transcribe = AsyncMock(side_effect=Exception("whisper crashed"))
+    with _make_client(stt=failing_stt) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.json()["fallback_flags"]["stt"] is True
+
+
+def test_stt_no_fallback_when_transcribe_succeeds():
+    stt = MagicMock()
+    stt.transcribe = AsyncMock(return_value="오늘 너무 행복해")
+    with _make_client(stt=stt) as c:
+        res = c.post("/recommend", files=_audio())
+    assert res.json()["fallback_flags"]["stt"] is False
+
+
+def test_stt_no_fallback_when_audio_empty():
+    with _make_client() as c:
+        res = c.post("/recommend", files={"audio": ("t.wav", io.BytesIO(b""), "audio/wav")})
+    assert res.json()["fallback_flags"]["stt"] is False
+
+
 # ── _rule_based_context 단위 테스트 ──────────────────────────────────────────
 
 def test_rule_based_context_detects_time():
