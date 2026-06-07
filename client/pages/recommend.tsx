@@ -63,18 +63,15 @@ const ACTIVITY_KO: Record<string, string> = {
   socializing: '사람들과 함께',
 };
 
-/** 감정 영문 키 → 한국어 레이블 */
+/** 감정 영문 키 → 한국어 레이블 — backend `_EMOTION_LABELS` 7종과 1:1 (schemas/context.py). */
 const EMOTION_KO: Record<string, string> = {
   happy: '행복',
   sad: '슬픔',
   angry: '화남',
   anxious: '불안',
   calm: '차분',
-  excited: '설렘',
-  neutral: '중립',
-  fearful: '두려움',
-  surprised: '놀람',
-  disgusted: '불쾌',
+  energetic: '활기',
+  melancholic: '우울',
 };
 
 // ── 상황 칩 컴포넌트 ──────────────────────────────────────────────────────────
