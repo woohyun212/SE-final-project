@@ -29,6 +29,12 @@ echo "현재 활성: $ACTIVE → 신규: $NEW (포트 $NEW_PORT)"
 echo "이미지 pull 중..."
 docker pull "$IMAGE"
 
+# 기존 prod 단일 컨테이너 정리 (blue-green 최초 전환 시)
+if docker ps -q --filter "name=^se-final-project-backend$" | grep -q .; then
+    echo "기존 prod 컨테이너 중단..."
+    docker stop se-final-project-backend 2>/dev/null || true
+fi
+
 # 비활성 슬롯 시작
 echo "backend-$NEW 기동 중..."
 BACKEND_IMAGE="$IMAGE" docker compose -f "$COMPOSE_FILE" up -d "backend-$NEW"

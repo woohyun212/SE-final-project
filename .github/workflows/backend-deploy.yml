@@ -90,21 +90,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy compose file
+      - name: Copy deploy files
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: docker-compose.prod.yml
+          source: "docker-compose.blue-green.yml,infra/deploy.sh"
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
 
-      - name: Restart backend
+      - name: Blue-Green deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
           BACKEND_IMAGE: ${{ env.IMAGE_NAME }}:latest
-          BACKEND_PORT: ${{ vars.BACKEND_PORT || '8000' }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
@@ -112,14 +111,12 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: BACKEND_IMAGE,BACKEND_PORT,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN
+          envs: BACKEND_IMAGE,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN
           script_stop: true
           script: |
-            cd "$DEPLOY_PATH"
-            test -f "$DEPLOY_PATH/docker-compose.prod.yml"
             if [ -n "$GHCR_TOKEN" ]; then
               echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
-            docker compose -f "$DEPLOY_PATH/docker-compose.prod.yml" pull backend
-            docker compose -f "$DEPLOY_PATH/docker-compose.prod.yml" up -d backend
+            chmod +x "$DEPLOY_PATH/infra/deploy.sh"
+            "$DEPLOY_PATH/infra/deploy.sh" "$BACKEND_IMAGE"
             docker image prune -f
