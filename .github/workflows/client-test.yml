@@ -1,0 +1,32 @@
+name: client-test
+
+# NFR4.4 — client 단위/통합 테스트 커버리지 게이트 (≥70%).
+# client/ 변경 PR·push 시 jest 커버리지(jest.config.js coverageThreshold)를 강제한다.
+
+on:
+  pull_request:
+    paths:
+      - "client/**"
+  push:
+    branches: [frontend, main]
+    paths:
+      - "client/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests with coverage gate
+        run: npm run test:coverage -- --ci
