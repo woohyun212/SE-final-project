@@ -24,9 +24,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
+        # jest 테스트만 실행하므로 Electron 바이너리 다운로드는 불필요하다.
+        # 다운로드 서버 504 등 일시 장애로 CI 가 깨지지 않도록 스킵한다.
         run: npm install
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
 
       - name: Run tests with coverage gate
         run: npm run test:coverage -- --ci
