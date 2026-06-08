@@ -43,9 +43,9 @@ jobs:
         working-directory: backend
         run: ruff check . --output-format=github
 
-      - name: Run tests
+      - name: Run tests (coverage gate ≥70%, NFR4.4)
         working-directory: backend
-        run: pytest
+        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=70
 
   build-and-push:
     name: Build and push Docker image
