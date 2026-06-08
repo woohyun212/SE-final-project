@@ -50,3 +50,4 @@ Secrets:
 Variables:
 
 - `BACKEND_PORT`: 외부에 열 포트. 기본값은 `8000`
+
