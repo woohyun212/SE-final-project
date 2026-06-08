@@ -109,15 +109,24 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: BACKEND_IMAGE,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN
+          envs: BACKEND_IMAGE,DEPLOY_PATH,GHCR_USER,GHCR_TOKEN,GEMINI_API_KEY
           script_stop: true
           script: |
             if [ -n "$GHCR_TOKEN" ]; then
               echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            fi
+            # GEMINI_API_KEY를 .env에 주입 (없으면 추가, 있으면 업데이트)
+            if [ -n "$GEMINI_API_KEY" ]; then
+              if grep -q "^GEMINI_API_KEY=" "$DEPLOY_PATH/.env" 2>/dev/null; then
+                sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=$GEMINI_API_KEY|" "$DEPLOY_PATH/.env"
+              else
+                echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> "$DEPLOY_PATH/.env"
+              fi
             fi
             chmod +x "$DEPLOY_PATH/infra/deploy.sh"
             "$DEPLOY_PATH/infra/deploy.sh" "$BACKEND_IMAGE"
