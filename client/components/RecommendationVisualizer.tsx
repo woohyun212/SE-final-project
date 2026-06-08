@@ -8,6 +8,8 @@
  * the shape in client/lib/api.ts (defined independently per task spec).
  */
 
+import { useState } from 'react';
+
 import styles from '../styles/recommend.module.css';
 
 /* ── Public types ── */
@@ -21,6 +23,8 @@ export interface Track {
   duration_sec: number;
   /** 30초 미리듣기 URL — 재생 버튼 활성 조건 (#48). 선택(하위호환). */
   preview_url?: string | null;
+  /** 앨범아트 URL — iTunes 보강(FR5.2). 없으면 음악노트 placeholder. 선택(하위호환). */
+  artwork_url?: string | null;
 }
 
 export interface RecommendationVisualizerProps {
@@ -58,6 +62,31 @@ function ArtPlaceholder() {
         <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6Z" />
       </svg>
     </div>
+  );
+}
+
+/**
+ * 앨범아트 — artwork_url(iTunes 보강, FR5.2) 있으면 <img>, 없으면 음악노트 placeholder.
+ * 이미지 로드 실패(onError) 시 placeholder 로 graceful fallback.
+ */
+function AlbumArt({ src, title }: { src?: string | null; title: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <ArtPlaceholder />;
+  }
+
+  return (
+    <img
+      className={styles.artImage}
+      src={src}
+      alt={`${title} 앨범 커버`}
+      width={64}
+      height={64}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -151,7 +180,7 @@ function TrackRow({
       className={styles.trackItem}
       style={{ '--i': index } as React.CSSProperties}
     >
-      <ArtPlaceholder />
+      <AlbumArt src={track.artwork_url} title={track.title} />
       <div className={styles.trackInfo}>
         <span className={styles.trackTitle}>{track.title}</span>
         <span className={styles.trackArtist}>{track.artist}</span>

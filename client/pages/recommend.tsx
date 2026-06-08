@@ -29,6 +29,7 @@ import {
 } from '../lib/recommend';
 import { useAuthGuard } from '../lib/useAuthGuard';
 import { usePlaybackLogger } from '../lib/usePlaybackLogger';
+import { useTrackEnrichment } from '../lib/useTrackEnrichment';
 
 const FONT_URL =
   'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap';
@@ -226,6 +227,16 @@ export default function RecommendPage() {
   const tracks = result?.tracks ?? [];
   const hasResult = tracks.length > 0;
 
+  // preview_url 이 null 인 곡만 iTunes 로 미리듣기·앨범아트 보강 (FR5.4 / FR5.2 / FR6.2).
+  // 백엔드가 채운 preview_url 은 우선되고, 보강은 마운트 후 lazy 진행.
+  const enrichments = useTrackEnrichment(tracks);
+
+  // 곡별 병합값 헬퍼 — 보강 결과를 백엔드 값보다 후순위로 합친다.
+  const mergedPreviewUrl = (t: (typeof tracks)[number]): string | null =>
+    t.preview_url ?? enrichments[t.track_id ?? '']?.previewUrl ?? null;
+  const mergedArtworkUrl = (t: (typeof tracks)[number]): string | null =>
+    enrichments[t.track_id ?? '']?.artworkUrl ?? null;
+
   // ── context 칩 목록 계산 ────────────────────────────────────────────────────
   const contextChips: string[] = [];
   if (result?.context) {
@@ -384,7 +395,13 @@ export default function RecommendPage() {
 
             {/* ── 추천 곡 리스트 ── */}
             <RecommendationVisualizer
-              tracks={tracks}
+              tracks={tracks.map((t) => ({
+                ...t,
+                // 백엔드 preview_url 우선, 없으면 iTunes 보강값 (FR5.4).
+                preview_url: mergedPreviewUrl(t),
+                // 앨범아트는 보강값 — 없으면 Visualizer 가 placeholder fallback (FR5.2).
+                artwork_url: mergedArtworkUrl(t),
+              }))}
               loading={false}
               error={null}
               renderRowActions={(t) => (
