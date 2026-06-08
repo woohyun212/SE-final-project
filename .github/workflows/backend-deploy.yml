@@ -122,7 +122,8 @@ jobs:
             fi
             # GEMINI_API_KEY를 .env에 주입 (없으면 추가, 있으면 업데이트)
             if [ -n "$GEMINI_API_KEY" ]; then
-              if grep -q "^GEMINI_API_KEY=" "$DEPLOY_PATH/.env" 2>/dev/null; then
+              touch "$DEPLOY_PATH/.env"
+              if grep -q "^GEMINI_API_KEY=" "$DEPLOY_PATH/.env"; then
                 sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=$GEMINI_API_KEY|" "$DEPLOY_PATH/.env"
               else
                 echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> "$DEPLOY_PATH/.env"
