@@ -1,7 +1,30 @@
 import type { FeedbackType, PlaybackEvent, HistoryItem } from "./recommend";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+/**
+ * API base URL 정규화 — 백엔드 TLS 적용 대응.
+ *
+ * 원격 호스트의 `http://` 는 `https://` 로 승격하고, 로컬 dev 호스트
+ * (localhost/127.0.0.1/::1/*.local)는 그대로 둔다(로컬은 보통 TLS 미적용).
+ * 사용자 `.env` 가 http 라도 런타임에 https 로 호출하도록 보장한다.
+ * 말미 슬래시는 제거해 `${base}${path}` 결합 시 중복 슬래시를 막는다.
+ */
+export function normalizeApiBaseUrl(raw: string): string {
+  const url = raw.trim().replace(/\/+$/, "");
+  if (!url.startsWith("http://")) return url;
+
+  const host = url.slice("http://".length).split("/")[0].split(":")[0];
+  const isLocal =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host.endsWith(".local");
+
+  return isLocal ? url : `https://${url.slice("http://".length)}`;
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
+);
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
