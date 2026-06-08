@@ -29,6 +29,15 @@ echo "현재 활성: $ACTIVE → 신규: $NEW (포트 $NEW_PORT)"
 echo "이미지 pull 중..."
 docker pull "$IMAGE"
 
+# 기존 prod 단일 컨테이너가 신규 슬롯 포트(8000)와 충돌할 때만 선제 정리
+# (이 경우 nginx 는 ACTIVE 슬롯(8010)을 보고 있으므로 트래픽 영향 없음.
+#  최초 전환(NEW=green:8010)에서는 충돌이 없으므로 트래픽 전환 후에 정리한다 — 무중단 유지)
+if [ "$NEW_PORT" = "8000" ] && docker ps -q --filter "name=^se-final-project-backend$" | grep -q .; then
+    echo "포트 8000 충돌 — 기존 prod 컨테이너 정리..."
+    docker stop se-final-project-backend 2>/dev/null || true
+    docker rm se-final-project-backend 2>/dev/null || true
+fi
+
 # 비활성 슬롯 시작
 echo "backend-$NEW 기동 중..."
 BACKEND_IMAGE="$IMAGE" docker compose -f "$COMPOSE_FILE" up -d "backend-$NEW"
@@ -60,5 +69,12 @@ echo "$NEW" > "$SLOT_FILE"
 sleep 10
 echo "backend-$ACTIVE 중단..."
 docker stop "se-final-project-backend-$ACTIVE" 2>/dev/null || true
+
+# 기존 prod 단일 컨테이너 정리 (blue-green 최초 전환 시 — 트래픽 전환 후라 무중단)
+if docker ps -aq --filter "name=^se-final-project-backend$" | grep -q .; then
+    echo "기존 prod 컨테이너 정리..."
+    docker stop se-final-project-backend 2>/dev/null || true
+    docker rm se-final-project-backend 2>/dev/null || true
+fi
 
 echo "✅ 배포 완료: $ACTIVE → $NEW"
