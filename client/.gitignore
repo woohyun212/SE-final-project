@@ -6,3 +6,6 @@ dist/
 electron/main.js
 electron/preload.js
 electron/*.js.map
+
+# electron-builder 산출물
+/release
