@@ -11,17 +11,17 @@ import {
   MIN_DURATION_MS,
   useVoiceRecorder,
 } from "../lib/useVoiceRecorder";
-import { encodeMp3 } from "../lib/encodeMp3";
+import { encodeWav } from "../lib/encodeWav";
 
-// encodeMp3 는 AudioContext/디코딩에 의존하므로 jsdom 에선 mock 으로 대체한다.
-// 녹음 원본을 그대로 audio/mpeg Blob 으로 감싼 값을 즉시 resolve.
-jest.mock("../lib/encodeMp3", () => ({
-  encodeMp3: jest.fn(
-    (blob: Blob) => Promise.resolve(new Blob([blob], { type: "audio/mpeg" }))
+// encodeWav 는 AudioContext/디코딩에 의존하므로 jsdom 에선 mock 으로 대체한다.
+// 녹음 원본을 그대로 audio/wav Blob 으로 감싼 값을 즉시 resolve.
+jest.mock("../lib/encodeWav", () => ({
+  encodeWav: jest.fn(
+    (blob: Blob) => Promise.resolve(new Blob([blob], { type: "audio/wav" }))
   ),
 }));
 
-const mockEncodeMp3 = encodeMp3 as jest.MockedFunction<typeof encodeMp3>;
+const mockEncodeWav = encodeWav as jest.MockedFunction<typeof encodeWav>;
 
 // ── MediaRecorder mock ──────────────────────────────────────────────────────
 const recorderInstances: MockMediaRecorder[] = [];
@@ -126,22 +126,22 @@ describe("useVoiceRecorder", () => {
     expect(result.current.elapsedMs).toBeGreaterThanOrEqual(300);
   });
 
-  it(`${MAX_DURATION_MS}ms 경과 시 자동 종료되어 mp3 변환 후 recorded + audioBlob`, async () => {
+  it(`${MAX_DURATION_MS}ms 경과 시 자동 종료되어 WAV 변환 후 recorded + audioBlob`, async () => {
     const { result } = renderHook(() => useVoiceRecorder());
 
     await act(async () => {
       await result.current.start();
     });
 
-    // 자동 종료 → onstop 에서 encodeMp3(비동기) 호출 → 변환 완료까지 microtask flush.
+    // 자동 종료 → onstop 에서 encodeWav(비동기) 호출 → 변환 완료까지 microtask flush.
     await act(async () => {
       jest.advanceTimersByTime(MAX_DURATION_MS);
     });
 
-    expect(mockEncodeMp3).toHaveBeenCalledTimes(1);
+    expect(mockEncodeWav).toHaveBeenCalledTimes(1);
     expect(result.current.status).toBe("recorded");
     expect(result.current.audioBlob).toBeInstanceOf(Blob);
-    expect(result.current.audioBlob?.type).toBe("audio/mpeg");
+    expect(result.current.audioBlob?.type).toBe("audio/wav");
   });
 
   it(`${MIN_DURATION_MS}ms 미만에서 stop 하면 too_short + 결과 폐기`, async () => {

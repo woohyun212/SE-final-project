@@ -223,12 +223,12 @@ export async function authedFetch(
  * 자동 첨부한다. 운영 환경(`NEXT_PUBLIC_API_BASE_URL`)에서는 TLS(https) 로 전송된다
  * (NFR3.1). 비-2xx 응답·네트워크 실패는 `ApiError` 로 throw 된다.
  *
- * @param audio   녹음 결과 mp3 Blob (`audio/mpeg`)
- * @param filename 서버에 전달할 파일명 (기본 `recording.mp3`)
+ * @param audio   녹음 결과 WAV Blob (`audio/wav`)
+ * @param filename 서버에 전달할 파일명 (기본 `recording.wav`)
  */
 export async function recommendApi(
   audio: Blob,
-  filename = "recording.mp3"
+  filename = "recording.wav"
 ): Promise<unknown> {
   const form = new FormData();
   form.append("audio", audio, filename);

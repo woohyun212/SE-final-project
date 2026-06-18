@@ -11,12 +11,13 @@
  * 녹음 원본은 이 훅이 보관하지 않는다 — 호출자가 audioBlob 을 업로드한 뒤
  * reset() 으로 폐기한다 (NFR3.2 음성 원본 즉시 폐기 정책의 클라이언트 측 협조).
  *
- * audioBlob 은 항상 mp3(`audio/mpeg`)로 노출한다 — MediaRecorder 녹음 원본(webm/ogg)을
- * encodeMp3 로 재인코딩한다. 디코딩/인코딩이 불가능한 환경에서는 원본 Blob 으로 폴백.
+ * audioBlob 은 WAV(`audio/wav`)로 노출한다 — MediaRecorder 녹음 원본(webm/ogg)을
+ * encodeWav 로 재인코딩한다. 백엔드 ML 서비스가 soundfile(libsndfile)로 디코딩하는데
+ * libsndfile 이 mp3·webm 은 못 읽고 WAV 는 지원하기 때문. 변환 불가 환경에선 원본 폴백.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { encodeMp3 } from "./encodeMp3";
+import { encodeWav } from "./encodeWav";
 
 export const MAX_DURATION_MS = 5000;
 export const MIN_DURATION_MS = 2000;
@@ -25,7 +26,7 @@ export type RecorderStatus =
   | "idle" // 시작 전
   | "requesting" // 마이크 권한 요청 중
   | "recording" // 녹음 중
-  | "encoding" // 녹음 완료 — mp3 변환 중
+  | "encoding" // 녹음 완료 — WAV 변환 중
   | "recorded" // 녹음 완료 (유효 — audioBlob 사용 가능)
   | "too_short" // 2초 미만 — 재시도 안내
   | "denied" // 권한 거부
@@ -36,7 +37,7 @@ export interface VoiceRecorder {
   status: RecorderStatus;
   /** 녹음 경과 시간(ms). recording 상태에서 ~100ms 주기로 갱신. */
   elapsedMs: number;
-  /** 유효 녹음 결과 mp3 Blob (status === 'recorded' 일 때만 non-null). */
+  /** 유효 녹음 결과 WAV Blob (status === 'recorded' 일 때만 non-null). */
   audioBlob: Blob | null;
   /** 사용자에게 보여줄 오류 메시지 (denied/error/unsupported 시). */
   errorMessage: string | null;
@@ -170,11 +171,11 @@ export function useVoiceRecorder(): VoiceRecorder {
         return;
       }
 
-      // 녹음 원본(webm/ogg)을 mp3 로 재인코딩 후 노출. 변환 실패 시 원본으로 폴백.
+      // 녹음 원본(webm/ogg)을 WAV 로 재인코딩 후 노출. 변환 실패 시 원본으로 폴백.
       setStatus("encoding");
-      encodeMp3(rawBlob)
-        .then((mp3) => {
-          setAudioBlob(mp3);
+      encodeWav(rawBlob)
+        .then((wav) => {
+          setAudioBlob(wav);
           setStatus("recorded");
         })
         .catch(() => {
