@@ -133,6 +133,12 @@ export default function VoiceCapture({ onResult }: VoiceCaptureProps) {
         )}
         {isRequesting && <p className={styles.hint}>마이크 권한을 요청하는 중…</p>}
         {isRecording && <p className={styles.recordingLabel}>● 녹음 중…</p>}
+        {status === "encoding" && (
+          <p className={styles.hint}>
+            <span className={styles.spinner} aria-hidden="true" />
+            녹음을 변환하는 중…
+          </p>
+        )}
         {uploadStatus === "uploading" && (
           <p className={styles.hint}>
             <span className={styles.spinner} aria-hidden="true" />
