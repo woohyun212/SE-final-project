@@ -351,3 +351,5 @@ ml/.venv/
 # Allow Next.js client lib (line 17 의 Python 'lib/' ignore 룰이 client/lib 까지 매칭하는 충돌 회피)
 !client/lib/
 !client/lib/**
+# ML 감정 분류 behavioral 테스트 픽스처 (실서버 검증용 레이블 음성, *.wav 예외)
+!ml/tests/fixtures/labeled/*.wav
