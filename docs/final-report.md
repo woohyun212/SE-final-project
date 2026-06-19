@@ -580,7 +580,24 @@ def test_happy_voice_positive_valence():
 
 ## 6. 배포 및 운영
 
-### 6.1 인프라 구성
+### 6.1 배포 패키지 (클라이언트 릴리즈)
+
+클라이언트(Electron 앱)는 GitHub Releases를 통해 Windows / macOS / Ubuntu 3개 플랫폼용 설치 파일로 배포된다. 최신 릴리즈는 **client-v0.1.2**이다.
+
+릴리즈 페이지: https://github.com/woohyun212/SE-final-project/releases/tag/client-v0.1.2
+
+| OS | 파일 | 형식 |
+|---|---|---|
+| Windows | `EmotionMusic.Setup.0.1.2.exe` | 설치형 (NSIS) 인스톨러 |
+| Windows | `EmotionMusic.0.1.2.exe` | 포터블 실행형 |
+| macOS (Apple Silicon) | `EmotionMusic-0.1.2-arm64.dmg` | DMG 디스크 이미지 |
+| macOS (Apple Silicon) | `EmotionMusic-0.1.2-arm64-mac.zip` | 압축 배포본 (앱 번들) |
+| Ubuntu / Linux | `se-final-project-client_0.1.2_amd64.deb` | Debian 패키지 (apt/dpkg) |
+| Ubuntu / Linux | `EmotionMusic-0.1.2.AppImage` | 범용 실행형 (배포판 무관) |
+
+> 미서명 빌드이므로 Windows SmartScreen·macOS "확인되지 않은 개발자" 경고가 발생할 수 있다(정상 동작). macOS 빌드는 Apple Silicon(arm64) 전용이다. 전체 사용 흐름을 시연한 데모 영상: https://youtu.be/YQfoEkK7ZWc
+
+### 6.2 인프라 구성
 
 | 구성요소 | 상태 |
 |---|---|
@@ -590,7 +607,7 @@ def test_happy_voice_positive_valence():
 | HTTPS | Let's Encrypt 인증서, nginx TLS 종료 |
 | CI/CD | GitHub Actions, 평균 배포 소요 약 3분 |
 
-### 6.2 환경변수 관리
+### 6.3 환경변수 관리
 
 배포 시 GitHub Secrets → 서버 `.env`에 자동 주입되는 키:
 - `GEMINI_API_KEY`: ContextAnalyzer + ReasonGenerator
@@ -599,7 +616,7 @@ def test_happy_voice_positive_valence():
 - `POSTGRES_*`: DB 접속 정보
 - `ML_SERVICE_URL`: http://192.168.0.3:8001
 
-### 6.3 시연 시나리오
+### 6.4 시연 시나리오
 
 | 단계 | 내용 | 소요 시간 |
 |---|---|---|
