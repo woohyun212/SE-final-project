@@ -1,10 +1,9 @@
 name: client-build
 
-# NFR6.1 — macOS(Apple Silicon) 데스크톱 앱 빌드 산출물 생성.
-# 수동 트리거 또는 client-v* 태그 push 시 macos-latest(arm64) 에서 electron-builder 패키징 후
-# 산출물(dmg/zip)을 아티팩트로 업로드한다.
+# NFR6.1 — Windows/macOS/Linux 3-OS 데스크톱 앱 빌드 산출물 생성.
+# 수동 트리거 또는 client-v* 태그 push 시 3-OS 매트릭스로 electron-builder 패키징 후
+# 산출물(dmg/zip/nsis/AppImage/deb)을 아티팩트로 업로드한다.
 # client-v* 태그로 트리거되면 같은 산출물을 해당 태그의 GitHub Release 에도 첨부한다.
-# (Windows/Linux 빌드는 각 OS 머신에서 별도 수행 — 동일 태그 Release 에 수동 업로드 가능.)
 
 on:
   workflow_dispatch:
@@ -17,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]   # Apple Silicon(arm64) — Windows/Linux 는 별도 머신에서 빌드
+        os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write   # GitHub Release 생성/업로드 권한
