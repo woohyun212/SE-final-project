@@ -40,6 +40,10 @@ jobs:
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NEXT_PUBLIC_* 는 next build 시점에 코드에 인라인된다. 주입하지 않으면
+          # api.ts 가 http://localhost:8000 으로 폴백해 배포 앱이 localhost 로 요청한다.
+          # (.env.local 은 gitignore 라 CI 에 없음.) 운영 백엔드 URL 을 빌드에 고정.
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://backend.pongchi.kro.kr' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
