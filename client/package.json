@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "AI 기반 감정 분석 음악 추천 시스템 — Electron + Next.js 클라이언트",
+  "author": "SE Final Project Team",
+  "homepage": "https://github.com/woohyun212/SE-final-project",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woohyun212/SE-final-project.git"
+  },
   "main": "electron/main.js",
   "scripts": {
     "dev:next": "next dev",
